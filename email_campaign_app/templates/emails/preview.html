@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Email Preview - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Email Preview</h1>
+        <a href="javascript:history.back()" class="page-subtitle" style="text-decoration: underline;">Back</a>
+    </div>
+    <div class="btn-group">
+        <button class="btn btn-secondary" onclick="EmailPreview.sendTest()">Send Test to Self</button>
+        <button class="btn btn-primary" onclick="EmailPreview.save()">Save</button>
+    </div>
+</div>
+
+<div class="two-col-row">
+    <!-- Edit Form (left) -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Edit Email</h3>
+            <span class="badge" id="emailStatusBadge"></span>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <label>Subject</label>
+                <input type="text" class="form-control" id="editSubject">
+            </div>
+            <div class="form-group">
+                <label>Body</label>
+                <textarea class="form-control" id="editBody" rows="16"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Type</label>
+                <span class="badge" id="emailTypeBadge"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Preview (right) -->
+    <div class="email-preview">
+        <div class="preview-field">
+            <span class="preview-label">From:</span>
+            <span class="preview-value" id="previewFrom">your@email.com</span>
+        </div>
+        <div class="preview-field">
+            <span class="preview-label">To:</span>
+            <span class="preview-value" id="previewTo">--</span>
+        </div>
+        <div class="preview-field">
+            <span class="preview-label">Subject:</span>
+            <span class="preview-value" id="previewSubject">--</span>
+        </div>
+        <div class="preview-body" id="previewBody">--</div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var EmailPreview = {
+    emailId: {{ email_id }},
+    email: null,
+
+    init: function() {
+        this.load();
+        // Live preview sync
+        document.getElementById('editSubject').addEventListener('input', function() {
+            document.getElementById('previewSubject').textContent = this.value;
+        });
+        document.getElementById('editBody').addEventListener('input', function() {
+            document.getElementById('previewBody').textContent = this.value;
+        });
+    },
+
+    load: function() {
+        var self = this;
+        fetchAPI('/api/emails/' + this.emailId).then(function(email) {
+            self.email = email;
+            document.getElementById('editSubject').value = email.subject || '';
+            document.getElementById('editBody').value = email.body || '';
+            document.getElementById('previewSubject').textContent = email.subject || '';
+            document.getElementById('previewBody').textContent = email.body || '';
+
+            var statusBadge = document.getElementById('emailStatusBadge');
+            statusBadge.className = 'badge badge-' + email.status;
+            statusBadge.textContent = email.status;
+
+            var typeBadge = document.getElementById('emailTypeBadge');
+            typeBadge.className = 'badge badge-' + email.email_type;
+            typeBadge.textContent = email.email_type;
+
+            // Load contact info for the "To" field
+            if (email.contact_id) {
+                fetchAPI('/api/contacts/' + email.contact_id).then(function(contact) {
+                    document.getElementById('previewTo').textContent = contact.name + ' <' + contact.email + '>';
+                });
+            }
+        }).catch(function(err) {
+            showNotification('Failed to load email', 'error');
+        });
+    },
+
+    save: function() {
+        fetchAPI('/api/emails/' + this.emailId, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                subject: document.getElementById('editSubject').value,
+                body: document.getElementById('editBody').value
+            })
+        }).then(function(data) {
+            showNotification('Email saved', 'success');
+        }).catch(function(err) {
+            showNotification('Save failed: ' + err.message, 'error');
+        });
+    },
+
+    sendTest: function() {
+        showNotification('Test email feature requires Gmail to be connected', 'info');
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    EmailPreview.init();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Import Contacts - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Import Contacts</h1>
+        <a href="/contacts" class="page-subtitle" style="text-decoration: underline;">Back to Contacts</a>
+    </div>
+</div>
+
+<div class="card mb-2" style="max-width: 900px;">
+    <div class="card-header">
+        <h3>Import from Markdown File</h3>
+    </div>
+    <div class="card-body">
+        <div class="form-group">
+            <label>Campaign</label>
+            <select class="form-control" id="importCampaignId">
+                <option value="">Select a campaign (optional)...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>File Path (server path to markdown file)</label>
+            <input type="text" class="form-control" id="importFilepath" placeholder="/path/to/campaign_contacts.md">
+        </div>
+        <p class="text-muted" style="font-size: 0.82rem;">
+            OR paste markdown content directly:
+        </p>
+        <div class="form-group">
+            <label>Markdown Content</label>
+            <textarea class="form-control" id="importMarkdown" rows="10" placeholder="Paste your markdown contact data here..."></textarea>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="ImportManager.preview()">Preview</button>
+            <button class="btn btn-primary" onclick="ImportManager.importSelected()" id="btnImportSelected" disabled>Import Selected</button>
+        </div>
+    </div>
+</div>
+
+<!-- JSON File Upload -->
+<div class="card mb-2" style="max-width: 900px;">
+    <div class="card-header">
+        <h3>Upload JSON File</h3>
+    </div>
+    <div class="card-body">
+        <p class="text-muted" style="font-size: 0.82rem;">
+            Upload a JSON file exported from <code>importer/export_json.py</code>. The file contains contacts, emails, and personalization hooks.
+        </p>
+        <div class="form-group">
+            <label>Campaign (optional &mdash; one will be created from the JSON if not selected)</label>
+            <select class="form-control" id="jsonImportCampaignId">
+                <option value="">Create new campaign from JSON...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>JSON File</label>
+            <input type="file" class="form-control" id="jsonFileInput" accept=".json">
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-secondary" onclick="ImportManager.previewJSON()">Preview</button>
+            <button class="btn btn-primary" onclick="ImportManager.importJSON()" id="btnImportJSON" disabled>Import Selected</button>
+        </div>
+    </div>
+</div>
+
+<!-- Preview Table -->
+<div class="card" id="previewSection" style="display: none; max-width: 900px;">
+    <div class="card-header">
+        <h3>Preview (<span id="previewCount">0</span> contacts found)</h3>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-secondary" onclick="ImportManager.selectAll()">Select All</button>
+            <button class="btn btn-sm btn-secondary" onclick="ImportManager.deselectAll()">Deselect All</button>
+        </div>
+    </div>
+    <div class="table-wrapper import-preview-table">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 40px;">
+                        <input type="checkbox" id="selectAllCheckbox" onclick="ImportManager.toggleAll(this)">
+                    </th>
+                    <th>Name</th>
+                    <th>Company</th>
+                    <th>Email</th>
+                    <th>Title</th>
+                    <th>Wave</th>
+                </tr>
+            </thead>
+            <tbody id="previewTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Results -->
+<div class="card mt-2" id="importResults" style="display: none; max-width: 900px;">
+    <div class="card-header">
+        <h3>Import Results</h3>
+    </div>
+    <div class="card-body" id="importResultsBody"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        ImportManager.init();
+    });
+</script>
+{% endblock %}

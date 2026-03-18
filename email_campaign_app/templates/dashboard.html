@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Dashboard</h1>
+        <p class="page-subtitle">Campaign overview and key metrics</p>
+    </div>
+    <a href="/onboarding" class="btn btn-primary" style="gap: 8px;">
+        <i data-lucide="rocket" style="width:16px;height:16px;"></i>
+        Setup Guide
+    </a>
+</div>
+
+<!-- Row 1: Metric Cards -->
+<div class="metrics-row" id="metricsRow">
+    <div class="metric-card accent-bronze">
+        <span class="metric-label">Total Sent</span>
+        <span class="metric-value" id="metricTotalSent">--</span>
+        <span class="metric-sub" id="metricBouncedSub">--</span>
+    </div>
+    <div class="metric-card accent-success">
+        <span class="metric-label">Response Rate</span>
+        <span class="metric-value" id="metricResponseRate">--</span>
+        <span class="metric-sub" id="metricRepliedSub">--</span>
+    </div>
+    <div class="metric-card accent-info">
+        <span class="metric-label">Avg Response Time</span>
+        <span class="metric-value" id="metricAvgResponseTime">--</span>
+        <span class="metric-sub">hours</span>
+    </div>
+    <div class="metric-card accent-warning">
+        <span class="metric-label">Active Contacts</span>
+        <span class="metric-value" id="metricActiveContacts">--</span>
+        <span class="metric-sub" id="metricContactsSub">--</span>
+    </div>
+</div>
+
+<!-- Row 2: Charts -->
+<div class="two-col-row">
+    <div class="card">
+        <div class="card-header">
+            <h3>Emails Sent Per Day</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="sentByDayChart"></canvas>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3>Cumulative Replies Over Time</h3>
+        </div>
+        <div class="chart-container">
+            <canvas id="repliesCumulativeChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Row 3: Queue + Activity -->
+<div class="two-col-row">
+    <div class="card">
+        <div class="card-header">
+            <h3>Upcoming Queue</h3>
+            <a href="/emails/queue" class="btn btn-sm btn-secondary">View All</a>
+        </div>
+        <div class="card-body" id="upcomingQueue">
+            <div class="loading-overlay">
+                <span class="loading-spinner"></span>
+                Loading...
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Activity</h3>
+        </div>
+        <div class="card-body" id="recentActivity">
+            <div class="loading-overlay">
+                <span class="loading-spinner"></span>
+                Loading...
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Row 4: Contact Status Breakdown -->
+<div class="card mb-3">
+    <div class="card-header">
+        <h3>Contact Status Breakdown</h3>
+    </div>
+    <div class="chart-container" style="height: 120px;">
+        <canvas id="contactStatusChart"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

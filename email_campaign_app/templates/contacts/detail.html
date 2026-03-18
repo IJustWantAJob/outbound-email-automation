@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Detail - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Contact Detail</h1>
+        <a href="/contacts" class="page-subtitle" style="text-decoration: underline;">Back to Contacts</a>
+    </div>
+    <div class="btn-group" id="contactActions">
+        <button class="btn btn-danger btn-sm" id="btnOptOut" onclick="ContactDetail.optOut()">Opt Out</button>
+    </div>
+</div>
+
+<div class="split-layout">
+    <!-- Left Column (60%) -->
+    <div>
+        <!-- Contact Header -->
+        <div class="contact-header" id="contactHeader">
+            <div class="contact-avatar" id="contactAvatar">--</div>
+            <div class="contact-info">
+                <h2 id="contactName">Loading...</h2>
+                <div class="contact-meta">
+                    <span id="contactTitle"></span>
+                    <span id="contactCompany"></span>
+                </div>
+                <div class="contact-badges" id="contactBadges"></div>
+            </div>
+        </div>
+
+        <!-- Editable Fields -->
+        <div class="card mb-2">
+            <div class="card-header">
+                <h3>Contact Information</h3>
+                <button class="btn btn-sm btn-primary" onclick="ContactDetail.saveContact()">Save Changes</button>
+            </div>
+            <div class="card-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input type="text" class="form-control" id="editName">
+                    </div>
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" class="form-control" id="editTitle">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" class="form-control" id="editEmail">
+                    </div>
+                    <div class="form-group">
+                        <label>Company</label>
+                        <input type="text" class="form-control" id="editCompany">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes Section -->
+        <div class="card mb-2">
+            <div class="card-header">
+                <h3>Campaign Notes</h3>
+                <span class="text-muted" id="notesSaveStatus" style="font-size: 0.78rem;"></span>
+            </div>
+            <div class="card-body">
+                <textarea class="form-control" id="contactNotes" rows="6" placeholder="Add notes about this contact..."></textarea>
+            </div>
+        </div>
+
+        <!-- Personalization Hooks -->
+        <div class="card mb-2">
+            <div class="collapsible-header" onclick="ContactDetail.toggleCollapsible(this)">
+                <span class="arrow">&#9654;</span>
+                Personalization Hooks
+            </div>
+            <div class="collapsible-body">
+                <div id="personalizationHooks" style="font-size: 0.85rem; padding: 4px 0;">
+                    <p class="text-muted">No personalization hooks set.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column (40%) -->
+    <div>
+        <!-- Email Timeline -->
+        <div class="card mb-2">
+            <div class="card-header">
+                <h3>Email Timeline</h3>
+            </div>
+            <div class="card-body">
+                <div class="timeline" id="emailTimeline">
+                    <div class="loading-overlay">
+                        <span class="loading-spinner"></span>
+                        Loading emails...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reply Section -->
+        <div class="card mb-2" id="replySection" style="display: none;">
+            <div class="card-header">
+                <h3>Replies</h3>
+            </div>
+            <div class="card-body" id="replyContent"></div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var contactId = {{ contact_id }};
+        ContactDetail.init(contactId);
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+[Unit]
+Description=Email Campaign Manager
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/opt/email-campaign
+Environment=PATH=/opt/email-campaign/venv/bin:/usr/bin:/bin
+EnvironmentFile=/opt/email-campaign/.env
+ExecStart=/opt/email-campaign/venv/bin/gunicorn \
+    --bind 127.0.0.1:8080 \
+    --workers 1 \
+    --timeout 120 \
+    --access-logfile /opt/email-campaign/logs/access.log \
+    --error-logfile /opt/email-campaign/logs/error.log \
+    wsgi:app
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

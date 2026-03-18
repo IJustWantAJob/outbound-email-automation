@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+
+{% block title %}Setup - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Welcome! Let's set up your profile.</h1>
+        <p class="page-subtitle">This information powers your campaigns and nightly automation. You can change it later in Settings.</p>
+    </div>
+</div>
+
+<form id="onboardingForm" class="onboarding-form" style="max-width: 740px;">
+
+    <!-- Section 1: Company -->
+    <div class="card mb-2">
+        <div class="settings-section">
+            <h3>1. Your Company</h3>
+            <div class="form-group">
+                <label for="company_name">Company Name <span class="required">*</span></label>
+                <input type="text" class="form-control" id="company_name" required placeholder="e.g. Wattnest">
+            </div>
+            <div class="form-group">
+                <label for="company_description">Company Description</label>
+                <textarea class="form-control" id="company_description" rows="2" placeholder="One-liner: what does your company do?"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="industry">Industry</label>
+                    <input type="text" class="form-control" id="industry" placeholder="e.g. HVAC, SaaS, FinTech">
+                </div>
+                <div class="form-group">
+                    <label for="geography">Geography / Target Region</label>
+                    <input type="text" class="form-control" id="geography" placeholder="e.g. Bay Area, US nationwide, Europe">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="product_description">Product Description</label>
+                <textarea class="form-control" id="product_description" rows="2" placeholder="What are you building or selling? This helps Claude write relevant outreach."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: About You -->
+    <div class="card mb-2">
+        <div class="settings-section">
+            <h3>2. About You (the sender)</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sender_name">Your Name <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="sender_name" required placeholder="e.g. Gabbar Singh">
+                </div>
+                <div class="form-group">
+                    <label for="sender_title">Title / Role</label>
+                    <input type="text" class="form-control" id="sender_title" placeholder="e.g. Co-founder, Head of BD">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="sender_email">Email (for outreach)</label>
+                <input type="email" class="form-control" id="sender_email" placeholder="e.g. jane@doe.edu">
+            </div>
+            <div class="form-group">
+                <label for="sender_background">Background (2-3 sentences)</label>
+                <textarea class="form-control" id="sender_background" rows="2" placeholder="Previous experience, credentials, or context that lends credibility in outreach."></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="linkedin_url">LinkedIn URL</label>
+                    <input type="url" class="form-control" id="linkedin_url" placeholder="https://linkedin.com/in/...">
+                </div>
+                <div class="form-group">
+                    <label for="university">University (optional)</label>
+                    <input type="text" class="form-control" id="university" placeholder="e.g. UC Santa Cruz">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="accelerator">Accelerator / Program (optional)</label>
+                <input type="text" class="form-control" id="accelerator" placeholder="e.g. SkyDeck, Y Combinator">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Target Audience -->
+    <div class="card mb-2">
+        <div class="settings-section">
+            <h3>3. Target Audience</h3>
+            <div class="form-group">
+                <label for="target_customer_description">Who are your target customers?</label>
+                <textarea class="form-control" id="target_customer_description" rows="2" placeholder="e.g. Mid-market B2B SaaS companies with 50-500 employees that struggle with onboarding."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Target Segments (the nightly automation will use these to find contacts)</label>
+                <div id="segmentsList">
+                    <div class="segment-row" data-index="0">
+                        <div class="form-row" style="align-items: flex-end;">
+                            <div class="form-group" style="flex: 1;">
+                                <label class="segment-label">Segment Name</label>
+                                <input type="text" class="form-control seg-name" placeholder="e.g. VP Engineering at SaaS companies">
+                            </div>
+                            <div class="form-group" style="flex: 2;">
+                                <label class="segment-label">Description / ICP</label>
+                                <input type="text" class="form-control seg-desc" placeholder="e.g. Series A-C SaaS, 50-500 employees, US-based">
+                            </div>
+                            <div class="form-group" style="flex: 0 0 60px;">
+                                <label class="segment-label">Priority</label>
+                                <input type="number" class="form-control seg-priority" value="1" min="1" max="10">
+                            </div>
+                            <button type="button" class="remove-segment" onclick="Onboarding.removeSegment(this)" title="Remove segment" style="margin-bottom: 0.75rem; flex: 0 0 24px; width: 24px; height: 24px; padding: 0; border: none; background: none; color: var(--text-secondary, #6b6b5e); cursor: pointer; font-size: 1.1rem; line-height: 24px; text-align: center; border-radius: 50; opacity: 0.6; transition: opacity 0.15s, color 0.15s;" onmouseover="this.style.opacity='1';this.style.color='var(--danger, #b85c5c)'" onmouseout="this.style.opacity='0.6';this.style.color='var(--text-secondary, #6b6b5e)'">&times;</button>
+                        </div>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 12px; margin-top: 4px;">
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="Onboarding.addSegment()">+ Add Segment</button>
+                    <small class="form-help" style="color: var(--text-secondary, #6b6b5e);">Priority: 1 = most important, contacted first.</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Messaging Style -->
+    <div class="card mb-2">
+        <div class="settings-section">
+            <h3>4. Messaging Style</h3>
+            <div class="form-group">
+                <label for="tone_voice">Tone / Voice</label>
+                <input type="text" class="form-control" id="tone_voice" value="Curious, respectful, not salesy" placeholder="e.g. Student-founder, professional, direct">
+                <small class="form-help">Describe the tone you want for outreach emails. Claude will match this.</small>
+            </div>
+            <div class="form-group">
+                <label for="key_metrics">Key Metrics (optional)</label>
+                <textarea class="form-control" id="key_metrics" rows="2" placeholder="e.g. 99% accuracy ML models, 500+ users, $2M ARR. Claude uses these for credibility in emails."></textarea>
+            </div>
+            <div class="form-group">
+                <label for="pricing_notes">Pricing Notes (INTERNAL ONLY)</label>
+                <textarea class="form-control" id="pricing_notes" rows="2" placeholder="e.g. $60/unit, free pilot. This is never included in emails."></textarea>
+                <small class="form-help" style="color: var(--danger);">Never shared in outreach emails. For your reference and internal prompt context only.</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 2rem;">
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save & Continue</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var Onboarding = {
+    segmentIndex: 1,
+
+    addSegment: function() {
+        var container = document.getElementById('segmentsList');
+        var idx = this.segmentIndex++;
+        var html = '<div class="segment-row" data-index="' + idx + '">' +
+            '<div class="form-row" style="align-items: flex-end;">' +
+                '<div class="form-group" style="flex: 1;">' +
+                    '<input type="text" class="form-control seg-name" placeholder="Segment name">' +
+                '</div>' +
+                '<div class="form-group" style="flex: 2;">' +
+                    '<input type="text" class="form-control seg-desc" placeholder="Description / ICP">' +
+                '</div>' +
+                '<div class="form-group" style="flex: 0 0 60px;">' +
+                    '<input type="number" class="form-control seg-priority" value="' + (idx + 1) + '" min="1" max="10">' +
+                '</div>' +
+                '<button type="button" class="remove-segment" onclick="Onboarding.removeSegment(this)" title="Remove segment" style="margin-bottom: 0.75rem; flex: 0 0 24px; width: 24px; height: 24px; padding: 0; border: none; background: none; color: var(--text-secondary, #6b6b5e); cursor: pointer; font-size: 1.1rem; line-height: 24px; text-align: center; opacity: 0.6;" onmouseover="this.style.opacity=\'1\';this.style.color=\'var(--danger, #b85c5c)\'" onmouseout="this.style.opacity=\'0.6\';this.style.color=\'var(--text-secondary, #6b6b5e)\'">&times;</button>' +
+            '</div>' +
+        '</div>';
+        container.insertAdjacentHTML('beforeend', html);
+    },
+
+    removeSegment: function(btn) {
+        var row = btn.closest('.segment-row');
+        if (document.querySelectorAll('.segment-row').length > 1) {
+            row.remove();
+        }
+    },
+
+    collectSegments: function() {
+        var segments = [];
+        document.querySelectorAll('.segment-row').forEach(function(row) {
+            var name = row.querySelector('.seg-name').value.trim();
+            var desc = row.querySelector('.seg-desc').value.trim();
+            var priority = parseInt(row.querySelector('.seg-priority').value) || 1;
+            if (name) {
+                segments.push({ name: name, description: desc, priority: priority });
+            }
+        });
+        return segments;
+    },
+
+    submit: function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        var payload = {
+            company_name: document.getElementById('company_name').value.trim(),
+            company_description: document.getElementById('company_description').value.trim(),
+            industry: document.getElementById('industry').value.trim(),
+            geography: document.getElementById('geography').value.trim(),
+            product_description: document.getElementById('product_description').value.trim(),
+            sender_name: document.getElementById('sender_name').value.trim(),
+            sender_title: document.getElementById('sender_title').value.trim(),
+            sender_email: document.getElementById('sender_email').value.trim(),
+            sender_background: document.getElementById('sender_background').value.trim(),
+            linkedin_url: document.getElementById('linkedin_url').value.trim(),
+            university: document.getElementById('university').value.trim(),
+            accelerator: document.getElementById('accelerator').value.trim(),
+            target_customer_description: document.getElementById('target_customer_description').value.trim(),
+            target_segments: Onboarding.collectSegments(),
+            tone_voice: document.getElementById('tone_voice').value.trim(),
+            key_metrics: document.getElementById('key_metrics').value.trim(),
+            pricing_notes: document.getElementById('pricing_notes').value.trim(),
+        };
+
+        if (!payload.company_name) {
+            showNotification('Company name is required', 'warning');
+            btn.disabled = false;
+            btn.textContent = 'Save & Continue';
+            return;
+        }
+        if (!payload.sender_name) {
+            showNotification('Your name is required', 'warning');
+            btn.disabled = false;
+            btn.textContent = 'Save & Continue';
+            return;
+        }
+
+        fetchAPI('/api/profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        }).then(function() {
+            showNotification('Profile saved!', 'success');
+            setTimeout(function() { window.location.href = '/'; }, 600);
+        }).catch(function(err) {
+            showNotification('Failed to save: ' + err.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Save & Continue';
+        });
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('onboardingForm').addEventListener('submit', Onboarding.submit);
+});
+</script>
+{% endblock %}

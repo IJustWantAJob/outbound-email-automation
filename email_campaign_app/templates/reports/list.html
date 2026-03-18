@@ -1,0 +1,259 @@
+{% extends "base.html" %}
+
+{% block title %}Reports - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Reports</h1>
+        <p class="page-subtitle">Campaign performance reports</p>
+    </div>
+</div>
+
+<!-- Generate Report -->
+<div class="card mb-2">
+    <div class="card-header">
+        <h3>Generate Report</h3>
+    </div>
+    <div class="card-body">
+        <div class="form-row">
+            <div class="form-group">
+                <label>Campaign</label>
+                <select class="form-control" id="reportCampaign">
+                    <option value="">Select a campaign...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Report Type</label>
+                <select class="form-control" id="reportType">
+                    <option value="campaign_summary">Campaign Summary</option>
+                    <option value="daily_summary">Daily Summary</option>
+                    <option value="weekly_summary">Weekly Summary</option>
+                    <option value="campaign_final">Campaign Final</option>
+                </select>
+            </div>
+        </div>
+        <button class="btn btn-primary" id="generateBtn" onclick="ReportsPage.generate()">Generate Report</button>
+    </div>
+</div>
+
+<!-- Campaign Overview -->
+<div class="card mb-2">
+    <div class="card-header">
+        <h3>Campaign Overview</h3>
+    </div>
+    <div class="card-body" id="campaignOverview">
+        <div class="loading-overlay">
+            <span class="loading-spinner"></span>
+            Loading campaigns...
+        </div>
+    </div>
+</div>
+
+<!-- Past Reports -->
+<div class="card mb-2">
+    <div class="card-header">
+        <h3>Generated Reports</h3>
+    </div>
+    <div class="card-body" id="reportsList">
+        <div class="loading-overlay">
+            <span class="loading-spinner"></span>
+            Loading reports...
+        </div>
+    </div>
+</div>
+
+<!-- Report Preview -->
+<div class="card mt-2" id="reportPreview" style="display: none;">
+    <div class="card-header" style="display: flex; align-items: center; justify-content: space-between;">
+        <h3 id="reportPreviewTitle">Report Preview</h3>
+        <div>
+            <button class="btn btn-sm btn-primary" id="downloadBtn" style="display: none; margin-right: 0.5rem;" onclick="ReportsPage.downloadReport()">Download</button>
+            <button class="btn btn-sm btn-secondary" onclick="document.getElementById('reportPreview').style.display='none'">Close</button>
+        </div>
+    </div>
+    <div class="card-body" id="reportPreviewContent" style="white-space: pre-wrap; font-size: 0.88rem; font-family: monospace; line-height: 1.5;"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var ReportsPage = {
+    currentReportId: null,
+
+    init: function() {
+        this.loadCampaigns();
+        this.loadCampaignOverview();
+        this.loadPastReports();
+    },
+
+    loadCampaigns: function() {
+        fetchAPI('/api/campaigns').then(function(campaigns) {
+            var select = document.getElementById('reportCampaign');
+            campaigns.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name;
+                select.appendChild(opt);
+            });
+        });
+    },
+
+    loadCampaignOverview: function() {
+        var container = document.getElementById('campaignOverview');
+        fetchAPI('/api/campaigns').then(function(campaigns) {
+            if (!campaigns || campaigns.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No campaigns</h3><p>Create a campaign first.</p></div>';
+                return;
+            }
+
+            var promises = campaigns.map(function(c) {
+                return fetchAPI('/api/campaigns/' + c.id + '/metrics').then(function(metrics) {
+                    return { campaign: c, metrics: metrics };
+                });
+            });
+
+            Promise.all(promises).then(function(results) {
+                container.innerHTML = results.map(function(r) {
+                    return '<div class="report-card">' +
+                        '<div class="report-info">' +
+                            '<div class="report-type">' + escapeHtml(r.campaign.name) + '</div>' +
+                            '<div class="report-date">Contacts: ' + r.metrics.total_contacts +
+                                ' | Sent: ' + r.metrics.total_sent +
+                                ' | Replied: ' + r.metrics.total_replied +
+                                ' | Response Rate: ' + r.metrics.response_rate + '%</div>' +
+                        '</div>' +
+                        '<button class="btn btn-sm btn-secondary" onclick="ReportsPage.viewReport(' + r.campaign.id + ', this)">View Details</button>' +
+                    '</div>';
+                }).join('');
+            });
+        }).catch(function() {
+            container.innerHTML = '<div class="empty-state"><p>Failed to load campaigns.</p></div>';
+        });
+    },
+
+    loadPastReports: function() {
+        var container = document.getElementById('reportsList');
+        fetchAPI('/api/reports').then(function(reports) {
+            if (!reports || reports.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No reports yet</h3><p>Generate a report for one of your campaigns above.</p></div>';
+                return;
+            }
+
+            container.innerHTML = reports.map(function(r) {
+                var typeLabel = r.report_type === 'daily_summary' ? 'Daily Summary' :
+                    r.report_type === 'weekly_summary' ? 'Weekly Summary' :
+                    r.report_type === 'campaign_final' ? 'Campaign Final' : 'Campaign Summary';
+                var dateStr = r.generated_at ? formatDate(r.generated_at, true) : 'Unknown date';
+                return '<div class="report-card">' +
+                    '<div class="report-info">' +
+                        '<div class="report-type">' + escapeHtml(typeLabel) + '</div>' +
+                        '<div class="report-date">' + escapeHtml(dateStr) +
+                            (r.filename ? ' &middot; ' + escapeHtml(r.filename) : '') + '</div>' +
+                    '</div>' +
+                    '<div>' +
+                        '<button class="btn btn-sm btn-secondary" style="margin-right: 0.4rem;" onclick="ReportsPage.viewPastReport(' + r.id + ')">View</button>' +
+                        '<a class="btn btn-sm btn-secondary" href="/api/reports/' + r.id + '/download" target="_blank">Download</a>' +
+                    '</div>' +
+                '</div>';
+            }).join('');
+        }).catch(function() {
+            container.innerHTML = '<div class="empty-state"><p>Failed to load reports.</p></div>';
+        });
+    },
+
+    generate: function() {
+        var campaignId = document.getElementById('reportCampaign').value;
+        var reportType = document.getElementById('reportType').value;
+        if (!campaignId) {
+            showNotification('Please select a campaign', 'warning');
+            return;
+        }
+
+        var btn = document.getElementById('generateBtn');
+        btn.disabled = true;
+        btn.textContent = 'Generating...';
+
+        fetchAPI('/api/reports/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campaign_id: parseInt(campaignId), report_type: reportType })
+        }).then(function(report) {
+            ReportsPage.showPreview(report);
+            showNotification('Report generated successfully', 'success');
+            ReportsPage.loadPastReports();
+        }).catch(function(err) {
+            showNotification('Failed to generate report: ' + (err.message || 'Unknown error'), 'error');
+        }).finally(function() {
+            btn.disabled = false;
+            btn.textContent = 'Generate Report';
+        });
+    },
+
+    viewReport: function(campaignId, btnEl) {
+        if (btnEl) {
+            btnEl.disabled = true;
+            btnEl.textContent = 'Loading...';
+        }
+
+        fetchAPI('/api/reports/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campaign_id: campaignId, report_type: 'campaign_summary' })
+        }).then(function(report) {
+            ReportsPage.showPreview(report);
+            ReportsPage.loadPastReports();
+        }).catch(function(err) {
+            showNotification('Failed to generate report: ' + (err.message || 'Unknown error'), 'error');
+        }).finally(function() {
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.textContent = 'View Details';
+            }
+        });
+    },
+
+    viewPastReport: function(reportId) {
+        fetchAPI('/api/reports/' + reportId).then(function(report) {
+            ReportsPage.showPreview(report);
+        }).catch(function(err) {
+            showNotification('Failed to load report: ' + (err.message || 'Unknown error'), 'error');
+        });
+    },
+
+    showPreview: function(report) {
+        var preview = document.getElementById('reportPreview');
+        var content = document.getElementById('reportPreviewContent');
+        var title = document.getElementById('reportPreviewTitle');
+        var downloadBtn = document.getElementById('downloadBtn');
+
+        content.textContent = report.content || 'No content available.';
+
+        var typeLabel = report.report_type === 'daily_summary' ? 'Daily Summary' :
+            report.report_type === 'weekly_summary' ? 'Weekly Summary' :
+            report.report_type === 'campaign_final' ? 'Campaign Final' : 'Campaign Summary';
+        title.textContent = typeLabel + ' Report';
+
+        if (report.id) {
+            ReportsPage.currentReportId = report.id;
+            downloadBtn.style.display = 'inline-block';
+        } else {
+            downloadBtn.style.display = 'none';
+        }
+
+        preview.style.display = 'block';
+        preview.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    },
+
+    downloadReport: function() {
+        if (ReportsPage.currentReportId) {
+            window.open('/api/reports/' + ReportsPage.currentReportId + '/download', '_blank');
+        }
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    ReportsPage.init();
+});
+</script>
+{% endblock %}

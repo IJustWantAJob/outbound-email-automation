@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Settings</h1>
+        <p class="page-subtitle">Configure your API keys, Gmail connection, and campaign defaults</p>
+    </div>
+</div>
+
+<!-- Sender Profile -->
+<div class="card mb-2" style="max-width: 700px;">
+    <div class="settings-section">
+        <h3>Sender Profile</h3>
+        <p class="text-muted mb-2" style="font-size: 0.85rem;">
+            Your company info, sender identity, and target audience. Used by campaigns and the nightly automation agent.
+        </p>
+        <a href="/settings/profile" class="btn btn-sm btn-secondary">Edit Profile</a>
+    </div>
+</div>
+
+<!-- Anthropic API Key -->
+<div class="card mb-2" style="max-width: 700px;">
+    <div class="settings-section">
+        <h3>Anthropic API Key</h3>
+        <p class="text-muted mb-2" style="font-size: 0.85rem;">
+            Required for nightly contact expansion. Claude researches companies, finds contacts, and writes personalized emails.
+            Get a key at <a href="https://console.anthropic.com/settings/keys" target="_blank" style="text-decoration: underline;">console.anthropic.com</a>.
+        </p>
+        <div class="connection-status" id="anthropicStatus">
+            <span class="loading-spinner"></span>
+            Checking...
+        </div>
+        <div class="form-group" id="anthropicKeyInput" style="display: none; margin-top: 12px;">
+            <div class="form-inline" style="gap: 8px;">
+                <input type="password" class="form-control" id="anthropicKey" placeholder="sk-ant-..." style="max-width: 400px; font-family: monospace; font-size: 0.85rem;">
+                <button class="btn btn-sm btn-primary" onclick="SettingsPage.saveAnthropicKey()">Save Key</button>
+            </div>
+            <small class="form-help" style="margin-top: 4px; display: block; color: var(--text-secondary, #6b6b5e);">Encrypted and stored locally. Written to <code>nightly/.env</code> for the automation scripts.</small>
+        </div>
+    </div>
+</div>
+
+<!-- Gmail Connection -->
+<div class="card mb-2" style="max-width: 700px;">
+    <div class="settings-section">
+        <h3>Gmail Connection</h3>
+        <p class="text-muted mb-2" style="font-size: 0.85rem;">
+            Connect your Gmail to send campaign emails. Requires Google OAuth credentials.
+        </p>
+        <div class="connection-status" id="gmailStatus">
+            <span class="loading-spinner"></span>
+            Checking connection status...
+        </div>
+        <div class="btn-group" id="gmailActions"></div>
+
+        <!-- Test Email (only shown when connected) -->
+        <div id="testEmailSection" style="display: none; margin-top: 16px;">
+            <div class="form-group">
+                <label>Send Test Email To</label>
+                <div class="form-inline">
+                    <input type="email" class="form-control" id="testEmailAddress" placeholder="your@email.com" style="max-width: 300px;">
+                    <button class="btn btn-sm btn-secondary" onclick="SettingsPage.sendTestEmail()">Send Test</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- How to Run Nightly Automation -->
+<div class="card mb-2" style="max-width: 700px;">
+    <div class="settings-section">
+        <h3>Nightly Automation</h3>
+        <p class="text-muted mb-2" style="font-size: 0.85rem;">
+            The nightly agent uses your Anthropic API key to autonomously research contacts, write emails, and commit to git.
+        </p>
+
+        <div style="background: var(--bg-primary, #fefae0); border: 1px solid var(--border, #d5d0c4); border-radius: 6px; padding: 16px; font-size: 0.85rem; line-height: 1.7;">
+            <p style="font-weight: 600; margin-bottom: 8px;">Option 1: Run manually (easiest)</p>
+            <code style="display: block; background: var(--bg-card, #fff); padding: 8px 12px; border-radius: 4px; font-size: 0.8rem; margin-bottom: 12px;">
+                bash nightly/find_more_contacts.sh --list&nbsp;&nbsp;&nbsp;# see your segments<br>
+                bash nightly/find_more_contacts.sh segment_name 10&nbsp;&nbsp;# find 10 contacts
+            </code>
+
+            <p style="font-weight: 600; margin-bottom: 8px;">Option 2: Cloud server with cron (autonomous)</p>
+            <p style="margin-bottom: 4px;">Deploy to a $5/mo server (DigitalOcean, EC2, Hetzner). Runs at 3am daily.</p>
+            <code style="display: block; background: var(--bg-card, #fff); padding: 8px 12px; border-radius: 4px; font-size: 0.8rem; margin-bottom: 12px;">
+                bash nightly/deploy.sh&nbsp;&nbsp;# one-command setup
+            </code>
+
+            <p style="font-weight: 600; margin-bottom: 8px;">Option 3: GitHub Actions (free)</p>
+            <p>Add your Anthropic key as a repo secret and use a scheduled workflow. No server needed.</p>
+        </div>
+
+        <p class="text-muted" style="font-size: 0.78rem; margin-top: 8px;">
+            Note: Cron jobs require an always-on machine. A closed laptop won't run scheduled tasks.
+        </p>
+    </div>
+</div>
+
+<!-- Campaign Defaults -->
+<div class="card" style="max-width: 700px;">
+    <div class="settings-section">
+        <h3>Campaign Defaults</h3>
+        <p class="text-muted mb-2" style="font-size: 0.85rem;">
+            Default values for new campaigns. These can be overridden per campaign.
+        </p>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Default Send Window Start</label>
+                <select class="form-control" id="defaultStartHour">
+                    <option value="8">8:00 AM</option>
+                    <option value="9">9:00 AM</option>
+                    <option value="10">10:00 AM</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Default Send Window End</label>
+                <select class="form-control" id="defaultEndHour">
+                    <option value="16">4:00 PM</option>
+                    <option value="17" selected>5:00 PM</option>
+                    <option value="18">6:00 PM</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Default Timezone</label>
+            <select class="form-control" id="defaultTimezone">
+                <option value="America/Los_Angeles" selected>Pacific Time (PT)</option>
+                <option value="America/Denver">Mountain Time (MT)</option>
+                <option value="America/Chicago">Central Time (CT)</option>
+                <option value="America/New_York">Eastern Time (ET)</option>
+            </select>
+        </div>
+        <p class="text-muted" style="font-size: 0.78rem;">
+            Note: These defaults are stored locally and applied when creating new campaigns.
+        </p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var SettingsPage = {
+    init: function() {
+        this.checkGmailStatus();
+        this.checkAnthropicStatus();
+        this.showUrlMessages();
+    },
+
+    showUrlMessages: function() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('gmail_connected') === 'true') {
+            var email = params.get('email') || 'Gmail';
+            showNotification('Gmail connected successfully as ' + email, 'success');
+        }
+        if (params.get('error') === 'gmail_config') {
+            showNotification('Gmail OAuth is not configured. Contact the administrator.', 'error');
+        }
+        if (params.get('error') === 'gmail_connect') {
+            showNotification('Failed to start Gmail authorization. Please try again.', 'error');
+        }
+        if (params.has('gmail_connected') || params.has('error')) {
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    },
+
+    // --- Anthropic API Key ---
+
+    checkAnthropicStatus: function() {
+        fetchAPI('/api/api-keys').then(function(data) {
+            var statusEl = document.getElementById('anthropicStatus');
+            var inputEl = document.getElementById('anthropicKeyInput');
+            var info = data.anthropic || {};
+
+            if (info.configured && info.is_active) {
+                statusEl.innerHTML =
+                    '<span class="status-dot connected"></span>' +
+                    '<div>' +
+                        '<div class="status-label">Connected</div>' +
+                        '<div class="status-email">API key configured' +
+                            (info.updated_at ? ' (updated ' + new Date(info.updated_at).toLocaleDateString() + ')' : '') +
+                        '</div>' +
+                    '</div>';
+                inputEl.style.display = 'block';
+                document.getElementById('anthropicKey').placeholder = 'sk-ant-****** (saved, enter new key to replace)';
+            } else {
+                statusEl.innerHTML =
+                    '<span class="status-dot disconnected"></span>' +
+                    '<div>' +
+                        '<div class="status-label">Not Configured</div>' +
+                        '<div class="status-email">Add your Anthropic API key to enable nightly automation</div>' +
+                    '</div>';
+                inputEl.style.display = 'block';
+            }
+        }).catch(function() {
+            document.getElementById('anthropicStatus').innerHTML =
+                '<span class="status-dot disconnected"></span>' +
+                '<div><div class="status-label">Status Unknown</div></div>';
+            document.getElementById('anthropicKeyInput').style.display = 'block';
+        });
+    },
+
+    saveAnthropicKey: function() {
+        var key = document.getElementById('anthropicKey').value.trim();
+        if (!key) {
+            showNotification('Please enter an API key', 'warning');
+            return;
+        }
+        if (!key.startsWith('sk-ant-')) {
+            showNotification('Anthropic keys start with sk-ant-', 'warning');
+            return;
+        }
+        fetchAPI('/api/api-keys/anthropic', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key: key }),
+        }).then(function() {
+            showNotification('Anthropic API key saved', 'success');
+            document.getElementById('anthropicKey').value = '';
+            SettingsPage.checkAnthropicStatus();
+        }).catch(function(err) {
+            showNotification('Failed to save: ' + err.message, 'error');
+        });
+    },
+
+    // --- Gmail ---
+
+    checkGmailStatus: function() {
+        fetchAPI('/gmail/status').then(function(data) {
+            var statusEl = document.getElementById('gmailStatus');
+            var actionsEl = document.getElementById('gmailActions');
+            var testSection = document.getElementById('testEmailSection');
+
+            if (data.connected) {
+                statusEl.innerHTML =
+                    '<span class="status-dot connected"></span>' +
+                    '<div>' +
+                        '<div class="status-label">Connected</div>' +
+                        '<div class="status-email">' + escapeHtml(data.email || 'Gmail account') + '</div>' +
+                    '</div>';
+                actionsEl.innerHTML =
+                    '<a href="/gmail/reauthorize" class="btn btn-sm btn-secondary" title="Refresh Gmail permissions without disconnecting">Re-authorize</a> ' +
+                    '<button class="btn btn-danger btn-sm" onclick="SettingsPage.disconnect()">Disconnect</button>';
+                testSection.style.display = 'block';
+            } else {
+                statusEl.innerHTML =
+                    '<span class="status-dot disconnected"></span>' +
+                    '<div>' +
+                        '<div class="status-label">Not Connected</div>' +
+                        '<div class="status-email">Connect your Gmail to send campaign emails</div>' +
+                    '</div>';
+                actionsEl.innerHTML = '<a href="/gmail/connect" class="btn btn-primary">Connect Gmail</a>';
+                testSection.style.display = 'none';
+            }
+        }).catch(function(err) {
+            document.getElementById('gmailStatus').innerHTML =
+                '<span class="status-dot disconnected"></span>' +
+                '<div>' +
+                    '<div class="status-label">Status Unknown</div>' +
+                    '<div class="status-email">Could not check connection status</div>' +
+                '</div>';
+        });
+    },
+
+    disconnect: function() {
+        if (!confirm('Are you sure you want to disconnect Gmail? You will not be able to send emails until you reconnect.')) return;
+        fetchAPI('/gmail/disconnect', { method: 'POST' }).then(function() {
+            showNotification('Gmail disconnected', 'info');
+            SettingsPage.checkGmailStatus();
+        }).catch(function(err) {
+            showNotification('Failed to disconnect: ' + err.message, 'error');
+        });
+    },
+
+    sendTestEmail: function() {
+        var email = document.getElementById('testEmailAddress').value.trim();
+        if (!email) {
+            showNotification('Please enter an email address', 'warning');
+            return;
+        }
+        var btn = document.querySelector('#testEmailSection .btn');
+        btn.disabled = true;
+        btn.textContent = 'Sending...';
+        fetchAPI('/api/test-email', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({to: email})
+        }).then(function(data) {
+            showNotification('Test email sent to ' + email, 'success');
+            btn.disabled = false;
+            btn.textContent = 'Send Test';
+        }).catch(function(err) {
+            showNotification('Failed to send: ' + err.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Send Test';
+        });
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    SettingsPage.init();
+});
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Contacts - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Contacts</h1>
+        <p class="page-subtitle">Manage your campaign contacts</p>
+    </div>
+    <div class="btn-group">
+        <a href="/contacts/import" class="btn btn-secondary">Import</a>
+        <a href="/contacts/new" class="btn btn-primary">Add Contact</a>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="filter-bar">
+    <select class="form-control" id="filterStatus">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="initial_sent">Initial Sent</option>
+        <option value="followup1_sent">Follow-up 1 Sent</option>
+        <option value="followup2_sent">Follow-up 2 Sent</option>
+        <option value="replied">Replied</option>
+        <option value="bounced">Bounced</option>
+        <option value="opted_out">Opted Out</option>
+    </select>
+    <select class="form-control" id="filterWave">
+        <option value="">All Waves</option>
+        <option value="1">Wave 1</option>
+        <option value="2">Wave 2</option>
+        <option value="3">Wave 3</option>
+        <option value="4">Wave 4</option>
+        <option value="5">Wave 5</option>
+    </select>
+    <input type="text" class="form-control search-input" id="filterSearch" placeholder="Search by name, company, or email...">
+</div>
+
+<!-- Contacts Table -->
+<div class="card">
+    <div class="table-wrapper">
+        <table id="contactsTable">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Company</th>
+                    <th>Name</th>
+                    <th>Title</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Wave</th>
+                    <th>Confidence</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="contactsTableBody">
+                <tr>
+                    <td colspan="9">
+                        <div class="loading-overlay">
+                            <span class="loading-spinner"></span>
+                            Loading contacts...
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="pagination" id="contactsPagination"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        ContactsManager.init();
+    });
+</script>
+{% endblock %}

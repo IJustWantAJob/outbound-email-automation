@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block title %}Sender Profile - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Sender Profile</h1>
+        <p class="page-subtitle">Your company info, sender identity, and target audience. Used by campaigns and nightly automation.</p>
+    </div>
+</div>
+
+<form id="profileForm" style="max-width: 740px;">
+
+    <!-- Section 1: Company -->
+    <div class="card mb-2">
+        <div class="settings-section">
+            <h3>Company</h3>
+            <div class="form-group">
+                <label for="company_name">Company Name <span class="required">*</span></label>
+                <input type="text" class="form-control" id="company_name" required>
+            </div>
+            <div class="form-group">
+                <label for="company_description">Company Description</label>
+                <textarea class="form-control" id="company_description" rows="2"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="industry">Industry</label>
+                    <input type="text" class="form-control" id="industry">
+                </div>
+                <div class="form-group">
+                    <label for="geography">Geography / Target Region</label>
+                    <input type="text" class="form-control" id="geography">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="product_description">Product Description</label>
+                <textarea class="form-control" id="product_description" rows="2"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Sender -->
+    <div class="card mb-2">
+        <div class="settings-section">
+            <h3>Sender Identity</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="sender_name">Your Name <span class="required">*</span></label>
+                    <input type="text" class="form-control" id="sender_name" required>
+                </div>
+                <div class="form-group">
+                    <label for="sender_title">Title / Role</label>
+                    <input type="text" class="form-control" id="sender_title">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="sender_email">Email</label>
+                <input type="email" class="form-control" id="sender_email">
+            </div>
+            <div class="form-group">
+                <label for="sender_background">Background</label>
+                <textarea class="form-control" id="sender_background" rows="2"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="linkedin_url">LinkedIn URL</label>
+                    <input type="url" class="form-control" id="linkedin_url">
+                </div>
+                <div class="form-group">
+                    <label for="university">University</label>
+                    <input type="text" class="form-control" id="university">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="accelerator">Accelerator / Program</label>
+                <input type="text" class="form-control" id="accelerator">
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: Target -->
+    <div class="card mb-2">
+        <div class="settings-section">
+            <h3>Target Audience</h3>
+            <div class="form-group">
+                <label for="target_customer_description">Target Customer Description</label>
+                <textarea class="form-control" id="target_customer_description" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Target Segments</label>
+                <div id="segmentsList"></div>
+                <button type="button" class="btn btn-sm btn-secondary" onclick="ProfileEdit.addSegment()" style="margin-top: 4px;">+ Add Segment</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 4: Messaging -->
+    <div class="card mb-2">
+        <div class="settings-section">
+            <h3>Messaging Style</h3>
+            <div class="form-group">
+                <label for="tone_voice">Tone / Voice</label>
+                <input type="text" class="form-control" id="tone_voice">
+            </div>
+            <div class="form-group">
+                <label for="key_metrics">Key Metrics</label>
+                <textarea class="form-control" id="key_metrics" rows="2"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="pricing_notes">Pricing Notes (INTERNAL ONLY)</label>
+                <textarea class="form-control" id="pricing_notes" rows="2"></textarea>
+                <small class="form-help" style="color: var(--danger);">Never shared in outreach emails.</small>
+            </div>
+        </div>
+    </div>
+
+    <div style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 2rem;">
+        <a href="/settings" class="btn btn-sm btn-secondary">Back to Settings</a>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save Changes</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var ProfileEdit = {
+    segmentIndex: 0,
+
+    init: function() {
+        fetchAPI('/api/profile').then(function(data) {
+            if (!data.exists) { window.location.href = '/'; return; }
+            // Populate fields
+            var fields = [
+                'company_name', 'company_description', 'industry', 'geography',
+                'product_description', 'sender_name', 'sender_title', 'sender_email',
+                'sender_background', 'linkedin_url', 'university', 'accelerator',
+                'target_customer_description', 'tone_voice', 'key_metrics', 'pricing_notes'
+            ];
+            fields.forEach(function(f) {
+                var el = document.getElementById(f);
+                if (el) el.value = data[f] || '';
+            });
+            // Populate segments
+            var segments = data.target_segments || [];
+            if (segments.length === 0) segments = [{ name: '', description: '', priority: 1 }];
+            var container = document.getElementById('segmentsList');
+            container.innerHTML = '';
+            segments.forEach(function(seg, i) {
+                ProfileEdit.segmentIndex = i;
+                ProfileEdit.addSegment(seg.name, seg.description, seg.priority);
+            });
+        });
+    },
+
+    addSegment: function(name, desc, priority) {
+        var container = document.getElementById('segmentsList');
+        var idx = this.segmentIndex++;
+        name = name || '';
+        desc = desc || '';
+        priority = priority || (idx + 1);
+        var html = '<div class="segment-row" data-index="' + idx + '">' +
+            '<div class="form-row" style="align-items: flex-end;">' +
+                '<div class="form-group" style="flex: 1;">' +
+                    '<input type="text" class="form-control seg-name" value="' + escapeHtml(name) + '" placeholder="Segment name">' +
+                '</div>' +
+                '<div class="form-group" style="flex: 2;">' +
+                    '<input type="text" class="form-control seg-desc" value="' + escapeHtml(desc) + '" placeholder="Description / ICP">' +
+                '</div>' +
+                '<div class="form-group" style="flex: 0 0 60px;">' +
+                    '<input type="number" class="form-control seg-priority" value="' + priority + '" min="1" max="10">' +
+                '</div>' +
+                '<button type="button" class="btn btn-sm btn-danger remove-segment" onclick="ProfileEdit.removeSegment(this)" style="margin-bottom: 0.75rem; flex: 0 0 36px; height: 36px; padding: 0;">X</button>' +
+            '</div>' +
+        '</div>';
+        container.insertAdjacentHTML('beforeend', html);
+    },
+
+    removeSegment: function(btn) {
+        if (document.querySelectorAll('.segment-row').length > 1) {
+            btn.closest('.segment-row').remove();
+        }
+    },
+
+    collectSegments: function() {
+        var segments = [];
+        document.querySelectorAll('.segment-row').forEach(function(row) {
+            var name = row.querySelector('.seg-name').value.trim();
+            var desc = row.querySelector('.seg-desc').value.trim();
+            var priority = parseInt(row.querySelector('.seg-priority').value) || 1;
+            if (name) segments.push({ name: name, description: desc, priority: priority });
+        });
+        return segments;
+    },
+
+    submit: function(e) {
+        e.preventDefault();
+        var btn = document.getElementById('saveBtn');
+        btn.disabled = true;
+        btn.textContent = 'Saving...';
+
+        var payload = {};
+        var fields = [
+            'company_name', 'company_description', 'industry', 'geography',
+            'product_description', 'sender_name', 'sender_title', 'sender_email',
+            'sender_background', 'linkedin_url', 'university', 'accelerator',
+            'target_customer_description', 'tone_voice', 'key_metrics', 'pricing_notes'
+        ];
+        fields.forEach(function(f) {
+            var el = document.getElementById(f);
+            if (el) payload[f] = el.value.trim();
+        });
+        payload.target_segments = ProfileEdit.collectSegments();
+
+        fetchAPI('/api/profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        }).then(function() {
+            showNotification('Profile updated!', 'success');
+            btn.disabled = false;
+            btn.textContent = 'Save Changes';
+        }).catch(function(err) {
+            showNotification('Failed: ' + err.message, 'error');
+            btn.disabled = false;
+            btn.textContent = 'Save Changes';
+        });
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    ProfileEdit.init();
+    document.getElementById('profileForm').addEventListener('submit', ProfileEdit.submit);
+});
+</script>
+{% endblock %}

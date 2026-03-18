@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Email Queue - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Email Queue</h1>
+        <p class="page-subtitle" id="queueSummary">Loading...</p>
+    </div>
+    <div class="btn-group">
+        <select class="form-control" id="queueCampaignFilter" style="width: auto;">
+            <option value="">Select Campaign</option>
+        </select>
+        <select class="form-control" id="queueWaveFilter" style="width: auto; display: none;">
+            <option value="">All Waves</option>
+        </select>
+        <button class="btn btn-primary" onclick="EmailQueue.generateQueue()">Generate Today's Queue</button>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="queue-tabs" style="display: flex; gap: 0; margin-bottom: 20px; border-bottom: 2px solid #e0e0e0;">
+    <button class="queue-tab active" data-tab="schedule" onclick="EmailQueue.switchTab('schedule')" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px;">
+        Schedule <span class="tab-count" id="countSchedulePreview">-</span>
+    </button>
+    <button class="queue-tab" data-tab="planned" onclick="EmailQueue.switchTab('planned')" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px;">
+        Planned <span class="tab-count" id="countPlanned">0</span>
+    </button>
+    <button class="queue-tab" data-tab="scheduled" onclick="EmailQueue.switchTab('scheduled')" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px;">
+        Scheduled <span class="tab-count" id="countScheduled">0</span>
+    </button>
+    <button class="queue-tab" data-tab="sent" onclick="EmailQueue.switchTab('sent')" style="padding: 10px 20px; border: none; background: none; cursor: pointer; font-size: 14px; font-weight: 600; color: #888; border-bottom: 2px solid transparent; margin-bottom: -2px;">
+        Sent <span class="tab-count" id="countSent">0</span>
+    </button>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="queue-list" id="queueList">
+            <div class="empty-state">
+                <h3>Select a campaign</h3>
+                <p>Choose a campaign from the dropdown above to see its emails.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.queue-tab.active { color: #1a73e8 !important; border-bottom-color: #1a73e8 !important; }
+.queue-tab:hover { color: #333; }
+.tab-count { display: inline-block; min-width: 20px; padding: 1px 6px; border-radius: 10px; background: #eee; font-size: 12px; margin-left: 4px; }
+.queue-tab.active .tab-count { background: #e8f0fe; color: #1a73e8; }
+.email-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid #f0f0f0; flex-wrap: wrap; }
+.email-row:last-child { border-bottom: none; }
+.email-meta { min-width: 100px; }
+.email-wave { font-size: 11px; color: #888; font-weight: 600; text-transform: uppercase; }
+.email-type { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.email-type-initial { background: #e8f0fe; color: #1a73e8; }
+.email-type-followup1 { background: #fef3e0; color: #e65100; }
+.email-type-followup2 { background: #fce4ec; color: #c62828; }
+.email-info { flex: 1; min-width: 250px; }
+.email-contact { font-weight: 600; color: #222; }
+.email-contact a { color: #1a73e8; text-decoration: none; }
+.email-company { color: #888; font-size: 13px; }
+.email-subject { cursor: pointer; margin-top: 2px; color: #333; }
+.email-subject:hover { color: #1a73e8; }
+.email-to { font-size: 12px; color: #aaa; margin-top: 1px; }
+.email-body-preview { padding: 10px 0 4px 0; margin-top: 6px; border-top: 1px solid #f0f0f0; width: 100%; }
+.email-body-preview pre { white-space: pre-wrap; font-family: inherit; font-size: 13px; margin: 0; line-height: 1.5; color: #444; }
+.email-actions { display: flex; gap: 6px; align-items: center; }
+.email-status-sent { color: #2e7d32; font-size: 12px; font-weight: 600; }
+.email-status-failed { color: #c62828; font-size: 12px; font-weight: 600; }
+.email-sent-time { font-size: 11px; color: #aaa; }
+.confidence-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; font-weight: 600; }
+.confidence-HIGH { background: #e8f5e9; color: #2e7d32; }
+.confidence-MEDIUM { background: #fff8e1; color: #f57f17; }
+.confidence-LOW { background: #fce4ec; color: #c62828; }
+
+/* Schedule preview styles */
+.schedule-day { margin-bottom: 24px; }
+.schedule-day-header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0 6px; border-bottom: 2px solid #e0e0e0; margin-bottom: 8px;
+}
+.schedule-day-label { font-size: 15px; font-weight: 700; color: #222; }
+.schedule-day-date { font-size: 13px; color: #888; }
+.schedule-day-count {
+    display: inline-block; padding: 2px 8px; border-radius: 10px;
+    background: #e8f0fe; color: #1a73e8; font-size: 12px; font-weight: 600;
+}
+.schedule-email-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 0; border-bottom: 1px solid #f5f5f5;
+}
+.schedule-email-row:last-child { border-bottom: none; }
+.schedule-summary {
+    display: flex; gap: 20px; padding: 14px 16px; margin-bottom: 20px;
+    background: #f8f9fa; border-radius: 8px; border: 1px solid #e0e0e0;
+}
+.schedule-summary-item { text-align: center; }
+.schedule-summary-num { font-size: 24px; font-weight: 700; color: #222; display: block; }
+.schedule-summary-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+.schedule-no-emails { padding: 6px 0; color: #bbb; font-style: italic; font-size: 13px; }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+var EmailQueue = {
+    currentTab: 'schedule',
+    data: null,
+
+    init: function() {
+        this.loadCampaigns();
+        document.getElementById('queueCampaignFilter').addEventListener('change', function() {
+            EmailQueue.loadWaves();
+            EmailQueue.loadContent();
+        });
+        document.getElementById('queueWaveFilter').addEventListener('change', function() {
+            EmailQueue.loadContent();
+        });
+    },
+
+    loadContent: function() {
+        if (this.currentTab === 'schedule') {
+            this.loadSchedulePreview();
+        } else {
+            this.loadEmails();
+        }
+    },
+
+    loadCampaigns: function() {
+        fetchAPI('/api/campaigns').then(function(campaigns) {
+            var select = document.getElementById('queueCampaignFilter');
+            campaigns.forEach(function(c) {
+                var opt = document.createElement('option');
+                opt.value = c.id;
+                opt.textContent = c.name + (c.status === 'active' ? ' (active)' : '');
+                select.appendChild(opt);
+            });
+            if (campaigns.length === 1) {
+                select.value = campaigns[0].id;
+                EmailQueue.loadWaves();
+                EmailQueue.loadContent();
+            }
+        });
+    },
+
+    loadWaves: function() {
+        var campaignId = document.getElementById('queueCampaignFilter').value;
+        var waveSelect = document.getElementById('queueWaveFilter');
+        if (!campaignId) {
+            waveSelect.style.display = 'none';
+            return;
+        }
+        fetchAPI('/api/emails/all?campaign_id=' + campaignId + '&category=planned').then(function(data) {
+            waveSelect.innerHTML = '<option value="">All Waves</option>';
+            if (data.waves && data.waves.length > 1) {
+                data.waves.forEach(function(w) {
+                    var opt = document.createElement('option');
+                    opt.value = w;
+                    opt.textContent = 'Wave ' + w;
+                    waveSelect.appendChild(opt);
+                });
+                waveSelect.style.display = '';
+            } else {
+                waveSelect.style.display = 'none';
+            }
+            // Also update counts from the planned data
+            document.getElementById('countPlanned').textContent = data.counts.planned;
+            document.getElementById('countScheduled').textContent = data.counts.scheduled;
+            document.getElementById('countSent').textContent = data.counts.sent;
+
+            var total = data.counts.planned + data.counts.scheduled + data.counts.sent + data.counts.failed + data.counts.cancelled;
+            document.getElementById('queueSummary').textContent =
+                total + ' total emails | ' + data.counts.planned + ' planned, ' +
+                data.counts.scheduled + ' scheduled, ' + data.counts.sent + ' sent';
+        });
+    },
+
+    loadSchedulePreview: function() {
+        var campaignId = document.getElementById('queueCampaignFilter').value;
+        if (!campaignId) {
+            document.getElementById('queueList').innerHTML =
+                '<div class="empty-state"><h3>Select a campaign</h3><p>Choose a campaign to preview the send schedule.</p></div>';
+            return;
+        }
+
+        document.getElementById('queueList').innerHTML =
+            '<div class="loading-overlay"><span class="loading-spinner"></span> Loading schedule...</div>';
+
+        fetchAPI('/api/emails/schedule-preview?campaign_id=' + campaignId + '&days=14').then(function(data) {
+            document.getElementById('countSchedulePreview').textContent = data.summary.total_emails;
+            EmailQueue.renderSchedule(data);
+        }).catch(function(err) {
+            document.getElementById('queueList').innerHTML =
+                '<div class="empty-state"><h3>Failed to load schedule</h3><p>' + escapeHtml(err.message || 'Unknown error') + '</p></div>';
+        });
+    },
+
+    renderSchedule: function(data) {
+        var container = document.getElementById('queueList');
+        var html = '';
+
+        // Summary bar
+        html += '<div class="schedule-summary">' +
+            '<div class="schedule-summary-item">' +
+                '<span class="schedule-summary-num">' + data.summary.total_emails + '</span>' +
+                '<span class="schedule-summary-label">Total (14 days)</span>' +
+            '</div>' +
+            '<div class="schedule-summary-item">' +
+                '<span class="schedule-summary-num" style="color: #1a73e8;">' + data.summary.initial + '</span>' +
+                '<span class="schedule-summary-label">Initial</span>' +
+            '</div>' +
+            '<div class="schedule-summary-item">' +
+                '<span class="schedule-summary-num" style="color: #e65100;">' + data.summary.followup1 + '</span>' +
+                '<span class="schedule-summary-label">Follow-up 1</span>' +
+            '</div>' +
+            '<div class="schedule-summary-item">' +
+                '<span class="schedule-summary-num" style="color: #c62828;">' + data.summary.followup2 + '</span>' +
+                '<span class="schedule-summary-label">Follow-up 2</span>' +
+            '</div>' +
+        '</div>';
+
+        data.schedule.forEach(function(day) {
+            html += '<div class="schedule-day">' +
+                '<div class="schedule-day-header">' +
+                    '<span class="schedule-day-label">' + escapeHtml(day.day_label) + '</span>' +
+                    '<span class="schedule-day-date">' + day.date + '</span>' +
+                    '<span class="schedule-day-count">' + day.count + ' email' + (day.count !== 1 ? 's' : '') + '</span>' +
+                '</div>';
+
+            if (day.emails.length === 0) {
+                html += '<div class="schedule-no-emails">No emails scheduled</div>';
+            } else {
+                day.emails.forEach(function(e) {
+                    var typeClass = 'email-type-' + (e.email_type || 'initial');
+                    var typeLabel = e.email_type === 'followup1' ? 'FU1' :
+                                   e.email_type === 'followup2' ? 'FU2' : 'Initial';
+                    var confidenceBadge = e.email_confidence ?
+                        ' <span class="confidence-badge confidence-' + e.email_confidence + '">' + e.email_confidence + '</span>' : '';
+
+                    html += '<div class="schedule-email-row">' +
+                        '<span class="email-type ' + typeClass + '" style="min-width: 55px; text-align: center;">' + typeLabel + '</span>' +
+                        '<span style="min-width: 30px; color: #bbb; font-size: 12px;">W' + (e.wave || '?') + '</span>' +
+                        '<span style="font-weight: 600; min-width: 150px;">' + escapeHtml(e.contact_name || 'Unknown') + '</span>' +
+                        '<span class="email-company" style="min-width: 140px;">' + escapeHtml(e.company || '') + '</span>' +
+                        confidenceBadge +
+                        '<span style="flex: 1; color: #555; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">' +
+                            escapeHtml(e.subject || '(no subject)') +
+                        '</span>' +
+                        '<span style="font-size: 12px; color: #aaa; min-width: 160px;">' + escapeHtml(e.contact_email || '') + '</span>' +
+                    '</div>';
+                });
+            }
+
+            html += '</div>';
+        });
+
+        container.innerHTML = html;
+    },
+
+    loadEmails: function() {
+        var campaignId = document.getElementById('queueCampaignFilter').value;
+        if (!campaignId) {
+            document.getElementById('queueList').innerHTML =
+                '<div class="empty-state"><h3>Select a campaign</h3><p>Choose a campaign from the dropdown above to see its emails.</p></div>';
+            return;
+        }
+
+        var wave = document.getElementById('queueWaveFilter').value;
+        var url = '/api/emails/all?campaign_id=' + campaignId + '&category=' + this.currentTab;
+        if (wave) url += '&wave=' + wave;
+
+        document.getElementById('queueList').innerHTML =
+            '<div class="loading-overlay"><span class="loading-spinner"></span> Loading...</div>';
+
+        fetchAPI(url).then(function(data) {
+            EmailQueue.data = data;
+            document.getElementById('countPlanned').textContent = data.counts.planned;
+            document.getElementById('countScheduled').textContent = data.counts.scheduled;
+            document.getElementById('countSent').textContent = data.counts.sent;
+
+            var total = data.counts.planned + data.counts.scheduled + data.counts.sent + data.counts.failed + data.counts.cancelled;
+            document.getElementById('queueSummary').textContent =
+                total + ' total emails | ' + data.counts.planned + ' planned, ' +
+                data.counts.scheduled + ' scheduled, ' + data.counts.sent + ' sent';
+
+            EmailQueue.renderEmails(data.emails);
+        }).catch(function(err) {
+            document.getElementById('queueList').innerHTML =
+                '<div class="empty-state"><h3>Failed to load</h3><p>' + escapeHtml(err.message || 'Unknown error') + '</p></div>';
+        });
+    },
+
+    renderEmails: function(emails) {
+        var container = document.getElementById('queueList');
+        if (!emails || emails.length === 0) {
+            var msg = {
+                planned: 'No planned emails. All emails have been scheduled or sent.',
+                scheduled: 'No emails scheduled for today. Click "Generate Today\'s Queue" to schedule.',
+                sent: 'No emails sent yet.'
+            };
+            container.innerHTML = '<div class="empty-state"><h3>' + (msg[this.currentTab] || 'No emails') + '</h3></div>';
+            return;
+        }
+
+        var currentWave = null;
+        var html = '';
+
+        emails.forEach(function(item) {
+            if (EmailQueue.currentTab === 'planned' && item.wave !== currentWave) {
+                currentWave = item.wave;
+                html += '<div style="padding: 8px 0 4px; margin-top: 12px; border-bottom: 2px solid #e0e0e0;">' +
+                    '<strong style="font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 0.5px;">Wave ' + (item.wave || '?') + '</strong></div>';
+            }
+
+            var typeClass = 'email-type-' + (item.email_type || 'initial');
+            var typeLabel = item.email_type === 'followup1' ? 'Follow-up 1' :
+                           item.email_type === 'followup2' ? 'Follow-up 2' : 'Initial';
+
+            var confidenceBadge = item.email_confidence ?
+                ' <span class="confidence-badge confidence-' + item.email_confidence + '">' + item.email_confidence + '</span>' : '';
+
+            var actions = '';
+            if (EmailQueue.currentTab === 'planned') {
+                actions =
+                    '<a href="/emails/' + item.id + '/preview" class="btn btn-sm btn-secondary">Edit</a>' +
+                    '<button class="btn btn-sm btn-success" onclick="EmailQueue.sendNow(' + item.id + ')">Send Now</button>';
+            } else if (EmailQueue.currentTab === 'scheduled') {
+                var time = item.scheduled_at ? formatDate(item.scheduled_at, true) : '';
+                actions =
+                    '<span class="email-sent-time">' + time + '</span>' +
+                    '<a href="/emails/' + item.id + '/preview" class="btn btn-sm btn-secondary">Edit</a>' +
+                    '<button class="btn btn-sm btn-success" onclick="EmailQueue.sendNow(' + item.id + ')">Send Now</button>' +
+                    '<button class="btn btn-sm btn-danger" onclick="EmailQueue.cancel(' + item.id + ')">Cancel</button>';
+            } else if (EmailQueue.currentTab === 'sent') {
+                var sentTime = item.sent_at ? formatDate(item.sent_at, true) : '';
+                actions = '<span class="email-status-sent">Sent</span> <span class="email-sent-time">' + sentTime + '</span>';
+            }
+
+            html +=
+                '<div class="email-row">' +
+                    '<div class="email-meta">' +
+                        '<span class="email-type ' + typeClass + '">' + typeLabel + '</span>' +
+                    '</div>' +
+                    '<div class="email-info">' +
+                        '<div class="email-contact">' +
+                            '<a href="/contacts/' + item.contact_id + '">' + escapeHtml(item.contact_name || 'Unknown') + '</a>' +
+                            (item.company ? ' <span class="email-company">- ' + escapeHtml(item.company) + '</span>' : '') +
+                            confidenceBadge +
+                        '</div>' +
+                        '<div class="email-subject" onclick="EmailQueue.toggleBody(' + item.id + ')">' +
+                            escapeHtml(item.subject || '(no subject)') +
+                            ' <span style="font-size: 11px; color: #bbb;">&#9660;</span>' +
+                        '</div>' +
+                        '<div class="email-to">' + escapeHtml(item.contact_email || '') + '</div>' +
+                    '</div>' +
+                    '<div class="email-actions">' + actions + '</div>' +
+                    '<div id="queueBody_' + item.id + '" class="email-body-preview" style="display: none;">' +
+                        '<pre>' + escapeHtml(item.body || '') + '</pre>' +
+                    '</div>' +
+                '</div>';
+        });
+
+        container.innerHTML = html;
+    },
+
+    switchTab: function(tab) {
+        this.currentTab = tab;
+        document.querySelectorAll('.queue-tab').forEach(function(el) {
+            el.classList.toggle('active', el.dataset.tab === tab);
+        });
+        this.loadContent();
+    },
+
+    generateQueue: function() {
+        var campaignId = document.getElementById('queueCampaignFilter').value;
+        if (!campaignId) {
+            showNotification('Please select a campaign first', 'warning');
+            return;
+        }
+        fetchAPI('/api/emails/generate-queue', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ campaign_id: parseInt(campaignId) })
+        }).then(function(data) {
+            showNotification('Scheduled ' + data.scheduled + ' emails for today', 'success');
+            EmailQueue.switchTab('scheduled');
+        }).catch(function(err) {
+            showNotification('Failed to generate queue: ' + err.message, 'error');
+        });
+    },
+
+    sendNow: function(emailId) {
+        if (!confirm('Send this email now?')) return;
+        fetchAPI('/api/emails/' + emailId + '/send-now', { method: 'POST' })
+        .then(function(data) {
+            showNotification('Email sent!', 'success');
+            EmailQueue.loadContent();
+        }).catch(function(err) {
+            showNotification('Send failed: ' + err.message, 'error');
+        });
+    },
+
+    cancel: function(emailId) {
+        if (!confirm('Cancel this email?')) return;
+        fetchAPI('/api/emails/' + emailId + '/cancel', { method: 'POST' })
+        .then(function(data) {
+            showNotification('Email cancelled', 'info');
+            EmailQueue.loadContent();
+        }).catch(function(err) {
+            showNotification('Cancel failed: ' + err.message, 'error');
+        });
+    },
+
+    toggleBody: function(emailId) {
+        var el = document.getElementById('queueBody_' + emailId);
+        if (el) {
+            el.style.display = el.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    EmailQueue.init();
+});
+</script>
+{% endblock %}

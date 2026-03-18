@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Email Campaign Manager - Gmail Email Campaign Management">
+    <title>{% block title %}Email Campaign Manager{% endblock %}</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.2/lib/anime.min.js"></script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="sidebar-brand">
+                <h2>Email Campaign</h2>
+                <span>Manager</span>
+            </div>
+            <div class="sidebar-nav">
+                <a href="/" class="{% if active_page == 'dashboard' %}active{% endif %}">
+                    <i data-lucide="layout-dashboard" class="nav-icon"></i>
+                    Dashboard
+                </a>
+                <a href="/contacts" class="{% if active_page == 'contacts' %}active{% endif %}">
+                    <i data-lucide="users" class="nav-icon"></i>
+                    Contacts
+                </a>
+                <a href="/emails/queue" class="{% if active_page == 'queue' %}active{% endif %}">
+                    <i data-lucide="mail" class="nav-icon"></i>
+                    Email Queue
+                </a>
+                <a href="/campaigns" class="{% if active_page == 'campaigns' %}active{% endif %}">
+                    <i data-lucide="bar-chart-3" class="nav-icon"></i>
+                    Campaigns
+                </a>
+                <a href="/reports" class="{% if active_page == 'reports' %}active{% endif %}">
+                    <i data-lucide="file-text" class="nav-icon"></i>
+                    Reports
+                </a>
+                <a href="/settings" class="{% if active_page == 'settings' %}active{% endif %}">
+                    <i data-lucide="settings" class="nav-icon"></i>
+                    Settings
+                </a>
+                {% if has_profile %}
+                <a href="/settings/profile" class="{% if active_page == 'profile' %}active{% endif %}">
+                    <i data-lucide="user-circle" class="nav-icon"></i>
+                    Profile
+                </a>
+                {% endif %}
+            </div>
+            <div class="sidebar-footer">
+                {% if user_email %}
+                <div class="sidebar-user" style="padding: 0.5rem 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: #6b6b5e; border-top: 1px solid #e4e2dc; padding-top: 0.75rem;">
+                    <div style="font-weight: 500; color: #2c2c2c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ user_email }}">{{ user_email }}</div>
+                    <div style="margin-top: 2px;">
+                        {% if user_role == 'admin' %}
+                        <span style="background: #d4a373; color: white; padding: 1px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">Admin</span>
+                        {% else %}
+                        <span style="background: #e4e2dc; color: #6b6b5e; padding: 1px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">View Only</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                <a href="/logout" class="logout-link">
+                    <i data-lucide="log-out" class="nav-icon"></i>
+                    Sign Out
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            <div class="flash-messages">
+                {% for category, message in messages %}
+                <div class="flash-msg {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <!-- Notification Container -->
+    <div class="notification-container" id="notificationContainer"></div>
+
+    <script>
+        var USER_ROLE = '{{ user_role }}';
+        var USER_EMAIL = '{{ user_email }}';
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
+    <script>if (typeof lucide !== 'undefined') { lucide.createIcons(); }</script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/theme-switcher.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

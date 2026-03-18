@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# App data
+email_campaign_app/data/
+email_campaign_app/logs/
+email_campaign_app/reports/
+
+# Environment
+.env
+*.db
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Nightly state (local)
+nightly/state.json
+nightly/profile.json
+nightly/logs/

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}{% if editing %}Edit Contact{% else %}Add Contact{% endif %} - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>{% if editing %}Edit Contact{% else %}Add Contact{% endif %}</h1>
+        <a href="/contacts" class="page-subtitle" style="text-decoration: underline;">Back to Contacts</a>
+    </div>
+</div>
+
+<div class="card" style="max-width: 780px;">
+    <!-- Mode Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="formMode" onclick="ContactForm.switchTab(this)">Form</button>
+        <button class="tab-btn" data-tab="jsonMode" onclick="ContactForm.switchTab(this)">JSON Import</button>
+    </div>
+
+    <!-- Form Mode -->
+    <div class="tab-content active" id="formMode">
+        <form id="contactForm" onsubmit="ContactForm.submitForm(event)">
+            <div class="form-group">
+                <label>Campaign</label>
+                <select class="form-control" id="formCampaignId" required>
+                    <option value="">Select a campaign...</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Name *</label>
+                    <input type="text" class="form-control" id="formName" required placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label>Company</label>
+                    <input type="text" class="form-control" id="formCompany" placeholder="Acme Corp">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" class="form-control" id="formEmail" required placeholder="john@acme.com">
+                </div>
+                <div class="form-group">
+                    <label>Title</label>
+                    <input type="text" class="form-control" id="formTitle" placeholder="Director of Facilities">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Email Confidence</label>
+                    <select class="form-control" id="formConfidence">
+                        <option value="">Not Set</option>
+                        <option value="HIGH">High</option>
+                        <option value="MEDIUM">Medium</option>
+                        <option value="LOW">Low</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Wave</label>
+                    <select class="form-control" id="formWave">
+                        <option value="">Not Set</option>
+                        <option value="1">Wave 1</option>
+                        <option value="2">Wave 2</option>
+                        <option value="3">Wave 3</option>
+                        <option value="4">Wave 4</option>
+                        <option value="5">Wave 5</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Ask Type</label>
+                <select class="form-control" id="formAskType">
+                    <option value="">Not Set</option>
+                    <option value="pilot_partnership">Pilot Partnership</option>
+                    <option value="advisory_meeting">Advisory Meeting</option>
+                    <option value="technical_discussion">Technical Discussion</option>
+                    <option value="introduction">Introduction</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Notes</label>
+                <textarea class="form-control" id="formNotes" rows="3" placeholder="Any notes about this contact..."></textarea>
+            </div>
+            <div class="btn-group mt-2">
+                <button type="submit" class="btn btn-primary">{% if editing %}Update Contact{% else %}Create Contact{% endif %}</button>
+                <a href="/contacts" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+
+    <!-- JSON Mode -->
+    <div class="tab-content" id="jsonMode">
+        <div class="form-group">
+            <label>Campaign</label>
+            <select class="form-control" id="jsonCampaignId" required>
+                <option value="">Select a campaign...</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Paste JSON (single contact or array)</label>
+            <textarea class="form-control json-editor" id="jsonInput" rows="12" placeholder='[
+  {
+    "name": "John Doe",
+    "company": "Acme Corp",
+    "email": "john@acme.com",
+    "title": "Director",
+    "wave": 1
+  }
+]'></textarea>
+        </div>
+        <p class="text-muted mb-2" style="font-size: 0.82rem;">
+            Paste a single JSON object or an array of objects. Required fields: name, email.
+            Optional: company, title, wave, email_confidence, ask_type, notes.
+        </p>
+        <div class="btn-group">
+            <button class="btn btn-primary" onclick="ContactForm.submitJSON()">Import JSON</button>
+            <button class="btn btn-secondary" onclick="ContactForm.validateJSON()">Validate</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/contacts.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        ContactForm.init();
+    });
+</script>
+{% endblock %}

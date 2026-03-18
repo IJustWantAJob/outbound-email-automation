@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Campaigns - Email Campaign Manager{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Campaigns</h1>
+        <p class="page-subtitle">Manage your outreach campaigns</p>
+    </div>
+</div>
+
+<div id="campaignsList">
+    <div class="loading-overlay" id="campaignsLoading">
+        <span class="loading-spinner"></span>
+        Loading...
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+    const container = document.getElementById('campaignsList');
+    const loading = document.getElementById('campaignsLoading');
+
+    fetchAPI('/api/campaigns')
+        .then(data => {
+            const campaigns = data.campaigns || data || [];
+            if (!campaigns.length) {
+                container.innerHTML = `
+                    <div class="card">
+                        <div class="empty-state">
+                            <div class="empty-icon">&#128233;</div>
+                            <h3>No Campaigns Yet</h3>
+                            <p>Import contacts from a campaign markdown file to get started. Each import automatically creates a campaign.</p>
+                            <a href="/contacts/import" class="btn btn-primary">Import Contacts</a>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="card"><div class="card-header"><h3>All Campaigns</h3></div><div class="table-wrapper"><table><thead><tr>';
+            html += '<th>Name</th><th>Status</th><th>Contacts</th><th>Emails</th><th>Created</th><th></th>';
+            html += '</tr></thead><tbody>';
+
+            campaigns.forEach(c => {
+                const status = c.status || 'draft';
+                const created = c.created_at ? formatDate(c.created_at) : '—';
+                html += `<tr>
+                    <td><strong>${escapeHtml(c.name)}</strong></td>
+                    <td>${statusBadge(status)}</td>
+                    <td>${c.contact_count || 0}</td>
+                    <td>${c.email_count || 0}</td>
+                    <td class="text-muted">${created}</td>
+                    <td><a href="/campaigns/${c.id}" class="btn btn-sm btn-secondary">View</a></td>
+                </tr>`;
+            });
+
+            html += '</tbody></table></div></div>';
+            container.innerHTML = html;
+        })
+        .catch(err => {
+            container.innerHTML = `
+                <div class="card">
+                    <div class="empty-state">
+                        <div class="empty-icon">&#128233;</div>
+                        <h3>No Campaigns Yet</h3>
+                        <p>Import contacts from a campaign markdown file to get started. Each import automatically creates a campaign.</p>
+                        <a href="/contacts/import" class="btn btn-primary">Import Contacts</a>
+                    </div>
+                </div>
+            `;
+        });
+})();
+</script>
+{% endblock %}
