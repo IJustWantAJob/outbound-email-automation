@@ -38,7 +38,7 @@ class TestCampaign:
         assert saved.send_start_hour == 8
         assert saved.send_end_hour == 17
         assert saved.min_interval_minutes == 15
-        assert saved.max_emails_per_day == 10
+        assert saved.max_emails_per_day == 23
         assert saved.followup1_delay_days == 3
         assert saved.followup2_delay_days == 7
         assert saved.timezone == 'America/Los_Angeles'

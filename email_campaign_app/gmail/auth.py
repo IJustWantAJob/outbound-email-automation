@@ -59,8 +59,8 @@ class GmailAuth:
         """Create an OAuth2 Flow instance.
 
         Tries to load from client_secret.json first. If the file is missing,
-        falls back to constructing the flow from GOOGLE_LOGIN_CLIENT_ID and
-        GOOGLE_LOGIN_CLIENT_SECRET env-var-based config (same OAuth client).
+        falls back to constructing the flow from GMAIL_CLIENT_ID and
+        GMAIL_CLIENT_SECRET env vars.
         This makes the app resilient to deploys that may delete the JSON file.
 
         Returns:
@@ -78,21 +78,13 @@ class GmailAuth:
             )
 
         # Fallback: build from env-var config (no file needed).
-        # Try GMAIL_CLIENT_ID/SECRET first (dedicated Gmail send OAuth client),
-        # then fall back to GOOGLE_LOGIN_CLIENT_ID/SECRET (shared client).
-        client_id = (
-            self.app.config.get('GMAIL_CLIENT_ID')
-            or self.app.config.get('GOOGLE_LOGIN_CLIENT_ID', '')
-        )
-        client_secret = (
-            self.app.config.get('GMAIL_CLIENT_SECRET')
-            or self.app.config.get('GOOGLE_LOGIN_CLIENT_SECRET', '')
-        )
+        client_id = self.app.config.get('GMAIL_CLIENT_ID', '')
+        client_secret = self.app.config.get('GMAIL_CLIENT_SECRET', '')
 
         if not client_id or not client_secret:
             raise FileNotFoundError(
                 f'Gmail client_secret.json not found at {secret_path} and '
-                'GOOGLE_LOGIN_CLIENT_ID/SECRET not configured. '
+                'GMAIL_CLIENT_ID/GMAIL_CLIENT_SECRET not configured. '
                 'Upload client_secret.json or set the env vars.'
             )
 

@@ -27,12 +27,6 @@ class Config:
     # Gmail send OAuth client (separate from login client)
     GMAIL_CLIENT_ID = os.environ.get('GMAIL_CLIENT_ID', '')
     GMAIL_CLIENT_SECRET = os.environ.get('GMAIL_CLIENT_SECRET', '')
-    # Authentication — Google OAuth (login)
-    ADMIN_EMAIL = os.environ.get('ADMIN_EMAIL', 'admin@example.com')
-    ALLOWED_DOMAINS = ['@example.com']
-    GOOGLE_LOGIN_CLIENT_ID = os.environ.get('GOOGLE_LOGIN_CLIENT_ID', '')
-    GOOGLE_LOGIN_CLIENT_SECRET = os.environ.get('GOOGLE_LOGIN_CLIENT_SECRET', '')
-    PERMANENT_SESSION_LIFETIME = 86400 * 7  # 7 days
 
 
 class TestConfig(Config):
@@ -40,6 +34,3 @@ class TestConfig(Config):
     SQLALCHEMY_DATABASE_URI = 'sqlite:///:memory:'
     SECRET_KEY = 'test-secret-key'
     FERNET_KEY = ''  # Will be generated in test fixtures
-    LOGIN_DISABLED = True  # Skip auth in tests by default
-    GOOGLE_LOGIN_CLIENT_ID = 'test-client-id'
-    GOOGLE_LOGIN_CLIENT_SECRET = 'test-client-secret'

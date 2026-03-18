@@ -3,17 +3,8 @@
    ====================================================================== */
 
 /**
- * Check if the current user is an admin.
- */
-function isAdmin() {
-    return typeof USER_ROLE !== 'undefined' && USER_ROLE === 'admin';
-}
-
-
-/**
  * Fetch wrapper with error handling.
  * Returns parsed JSON on success, throws on error.
- * Shows a notification for 403 (view-only) errors.
  */
 function fetchAPI(url, options) {
     options = options || {};
@@ -22,9 +13,6 @@ function fetchAPI(url, options) {
             return resp.json().then(function(data) {
                 var err = new Error(data.error || 'Request failed');
                 err.status = resp.status;
-                if (resp.status === 403) {
-                    showNotification(data.error || 'View-only access. You cannot make changes.', 'warning');
-                }
                 throw err;
             }).catch(function(parseErr) {
                 if (parseErr.status) throw parseErr;
@@ -208,27 +196,3 @@ function setupNotesAutosave(textareaId, contactId) {
 
     textarea.addEventListener('input', save);
 }
-
-
-/**
- * Disable action elements for view-only users.
- * Call this after rendering dynamic content. Targets elements with
- * data-admin-only attribute or common action button classes.
- */
-function enforceViewerMode() {
-    if (isAdmin()) return;
-
-    // Disable buttons/links marked as admin-only
-    var els = document.querySelectorAll('[data-admin-only]');
-    for (var i = 0; i < els.length; i++) {
-        els[i].disabled = true;
-        els[i].style.opacity = '0.4';
-        els[i].style.pointerEvents = 'none';
-        els[i].title = 'View-only access';
-    }
-}
-
-// Auto-enforce on page load
-document.addEventListener('DOMContentLoaded', function() {
-    enforceViewerMode();
-});

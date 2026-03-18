@@ -31,6 +31,8 @@ class GmailTestConfig(TestConfig):
 
     FERNET_KEY = Fernet.generate_key().decode()
     GMAIL_CLIENT_SECRET_PATH = '/tmp/fake_client_secret.json'
+    GMAIL_CLIENT_ID = 'test-gmail-client-id'
+    GMAIL_CLIENT_SECRET = 'test-gmail-client-secret'
     REDIRECT_URI = 'http://localhost:5000/gmail/callback'
 
 
@@ -39,6 +41,8 @@ class GmailTestConfigNoFernet(TestConfig):
 
     FERNET_KEY = ''
     GMAIL_CLIENT_SECRET_PATH = '/tmp/fake_client_secret.json'
+    GMAIL_CLIENT_ID = 'test-gmail-client-id'
+    GMAIL_CLIENT_SECRET = 'test-gmail-client-secret'
     REDIRECT_URI = 'http://localhost:5000/gmail/callback'
 
 
@@ -165,7 +169,7 @@ class TestEncryptDecrypt:
 class TestGetAuthUrl:
     """Tests for OAuth2 authorization URL generation."""
 
-    @patch('gmail.auth.Flow.from_client_secrets_file')
+    @patch('gmail.auth.Flow.from_client_config')
     def test_get_auth_url_generates_url(
         self, mock_flow_cls, app_with_fernet, auth_with_fernet
     ):
@@ -184,7 +188,7 @@ class TestGetAuthUrl:
             assert state == 'state-123'
             mock_flow_cls.assert_called_once()
 
-    @patch('gmail.auth.Flow.from_client_secrets_file')
+    @patch('gmail.auth.Flow.from_client_config')
     def test_get_auth_url_includes_state(
         self, mock_flow_cls, app_with_fernet, auth_with_fernet
     ):
@@ -217,7 +221,7 @@ class TestHandleCallback:
     """Tests for the OAuth2 callback handler."""
 
     @patch('gmail.auth.build')
-    @patch('gmail.auth.Flow.from_client_secrets_file')
+    @patch('gmail.auth.Flow.from_client_config')
     def test_handle_callback_stores_token(
         self, mock_flow_cls, mock_build, app_with_fernet, db_fernet, auth_with_fernet
     ):
@@ -258,7 +262,7 @@ class TestHandleCallback:
             assert decrypted['refresh_token'] == 'refresh-token'
 
     @patch('gmail.auth.build')
-    @patch('gmail.auth.Flow.from_client_secrets_file')
+    @patch('gmail.auth.Flow.from_client_config')
     def test_handle_callback_deactivates_old_tokens(
         self, mock_flow_cls, mock_build, app_with_fernet, db_fernet, auth_with_fernet
     ):
@@ -432,7 +436,7 @@ class TestConnectionStatus:
 class TestConnectRoute:
     """Tests for the /gmail/connect route."""
 
-    @patch('gmail.auth.Flow.from_client_secrets_file')
+    @patch('gmail.auth.Flow.from_client_config')
     def test_connect_route_redirects(self, mock_flow_cls, app_with_fernet):
         """GET /gmail/connect returns a redirect to Google OAuth."""
         with app_with_fernet.app_context():

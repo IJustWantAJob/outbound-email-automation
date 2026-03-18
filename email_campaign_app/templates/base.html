@@ -58,22 +58,6 @@
                 {% endif %}
             </div>
             <div class="sidebar-footer">
-                {% if user_email %}
-                <div class="sidebar-user" style="padding: 0.5rem 1rem; margin-bottom: 0.5rem; font-size: 0.75rem; color: #6b6b5e; border-top: 1px solid #e4e2dc; padding-top: 0.75rem;">
-                    <div style="font-weight: 500; color: #2c2c2c; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="{{ user_email }}">{{ user_email }}</div>
-                    <div style="margin-top: 2px;">
-                        {% if user_role == 'admin' %}
-                        <span style="background: #d4a373; color: white; padding: 1px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">Admin</span>
-                        {% else %}
-                        <span style="background: #e4e2dc; color: #6b6b5e; padding: 1px 6px; border-radius: 3px; font-size: 0.65rem; font-weight: 600; text-transform: uppercase;">View Only</span>
-                        {% endif %}
-                    </div>
-                </div>
-                {% endif %}
-                <a href="/logout" class="logout-link">
-                    <i data-lucide="log-out" class="nav-icon"></i>
-                    Sign Out
-                </a>
             </div>
         </nav>
 
@@ -98,8 +82,7 @@
     <div class="notification-container" id="notificationContainer"></div>
 
     <script>
-        var USER_ROLE = '{{ user_role }}';
-        var USER_EMAIL = '{{ user_email }}';
+        var USER_ROLE = 'admin';
     </script>
     <script src="https://cdn.jsdelivr.net/npm/lucide@0.344.0/dist/umd/lucide.min.js"></script>
     <script>if (typeof lucide !== 'undefined') { lucide.createIcons(); }</script>

@@ -203,13 +203,10 @@ Set these environment variables (see `email_campaign_app/config.py`):
 |----------|---------|
 | `SECRET_KEY` | Flask session secret |
 | `DATABASE_URL` | SQLite/PostgreSQL connection string |
-| `FERNET_KEY` | Encryption key for stored OAuth tokens |
-| `GMAIL_CLIENT_ID` | Google OAuth client ID (for sending) |
-| `GMAIL_CLIENT_SECRET` | Google OAuth client secret |
-| `GOOGLE_LOGIN_CLIENT_ID` | Google OAuth client ID (for login) |
-| `GOOGLE_LOGIN_CLIENT_SECRET` | Google OAuth client secret (for login) |
-| `ADMIN_EMAIL` | Admin user email address |
-| `OAUTH_REDIRECT_URI` | OAuth callback URL |
+| `FERNET_KEY` | Encryption key for stored Gmail OAuth tokens |
+| `GMAIL_CLIENT_ID` | Google OAuth client ID (for Gmail sending) |
+| `GMAIL_CLIENT_SECRET` | Google OAuth client secret (for Gmail sending) |
+| `OAUTH_REDIRECT_URI` | Gmail OAuth callback URL |
 
 ## Running Tests
 
