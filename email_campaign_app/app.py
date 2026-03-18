@@ -124,6 +124,10 @@ def create_app(config_class=Config):
         app.logger.error('Internal server error: %s', e)
         return render_template('errors/500.html', active_page=''), 500
 
+    # Ensure data directory exists (gitignored, so missing on fresh clones)
+    data_dir = os.path.join(app.root_path, 'data')
+    os.makedirs(data_dir, exist_ok=True)
+
     # Create tables
     with app.app_context():
         from models import (
