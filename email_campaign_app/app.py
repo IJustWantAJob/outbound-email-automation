@@ -43,10 +43,12 @@ def create_app(config_class=Config):
     from database import db
     db.init_app(app)
 
-    # Warn if FERNET_KEY is missing (needed for Gmail token encryption)
-    if not app.config.get('TESTING') and not app.config.get('FERNET_KEY'):
+    # Warn if FERNET_KEY was auto-generated (tokens won't survive restarts)
+    if not app.config.get('TESTING') and not os.environ.get('FERNET_KEY'):
         app.logger.warning(
-            'FERNET_KEY is not set. Gmail token encryption is disabled. '
+            'FERNET_KEY not set — using an auto-generated key. '
+            'Gmail tokens will not survive app restarts. '
+            'For production, set FERNET_KEY in your environment. '
             'Generate one with: python3 -c '
             '"from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"'
         )

@@ -1,6 +1,17 @@
 import os
 
+from cryptography.fernet import Fernet
+
 basedir = os.path.abspath(os.path.dirname(__file__))
+
+
+def _default_fernet_key():
+    """Auto-generate a Fernet key for local development.
+
+    In production, set the FERNET_KEY environment variable to a stable key
+    so that encrypted tokens survive restarts.
+    """
+    return Fernet.generate_key().decode()
 
 
 class Config:
@@ -10,7 +21,7 @@ class Config:
         f'sqlite:///{os.path.join(basedir, "data", "campaign.db")}'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    FERNET_KEY = os.environ.get('FERNET_KEY', '')  # Must be set in production
+    FERNET_KEY = os.environ.get('FERNET_KEY') or _default_fernet_key()
     GMAIL_CLIENT_SECRET_PATH = os.environ.get(
         'GMAIL_CLIENT_SECRET_PATH',
         os.path.join(basedir, 'data', 'client_secret.json')

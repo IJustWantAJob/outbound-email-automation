@@ -144,6 +144,12 @@ python3 -c "from app import create_app; create_app()"  # Initialize DB
 python3 wsgi.py  # Run locally at http://localhost:8080
 ```
 
+> **Note:** A `FERNET_KEY` is auto-generated for local development. For production,
+> generate a stable key so encrypted Gmail tokens survive restarts:
+> ```bash
+> export FERNET_KEY=$(python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+> ```
+
 ### 2. Complete the onboarding form
 
 When you first open the app, you'll see a setup wizard. Fill in:
