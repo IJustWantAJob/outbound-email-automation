@@ -4,6 +4,98 @@
 
 ---
 
+## Quick Start
+
+### 1. Set up the sending app
+
+```bash
+cd email_campaign_app
+python3 -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python3 -c "from app import create_app; create_app()"  # Initialize DB
+python3 wsgi.py  # Run locally at http://localhost:8080
+```
+
+> **Note:** A `FERNET_KEY` is auto-generated for local development. For production,
+> generate a stable key so encrypted Gmail tokens survive restarts:
+> ```bash
+> export FERNET_KEY=$(python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
+> ```
+
+### 2. Complete the onboarding form
+
+When you first open the app, you'll see a setup wizard. Fill in:
+- **Your company** — name, industry, product description
+- **About you** — name, title, background (used as the email sender identity)
+- **Target audience** — who you're reaching out to, broken into prioritized segments
+- **Messaging style** — tone, key metrics, internal pricing notes
+
+This profile powers the nightly automation agent. It also generates `nightly/profile.json`, which the server-side scripts read to build prompts dynamically.
+
+### 3. Create a campaign
+
+See `campaigns/example_campaign/` for the full format. The basic structure:
+
+```
+campaigns/your_campaign/
+  README.md                    — ICP, targets, status
+  target_companies.md          — Company research
+  contacts.md                  — Decision-maker contacts
+  emails.md                    — Initial outreach emails
+  followups.md                 — Follow-up sequences
+  your_outreach_campaign.md    — Master file (everything combined)
+```
+
+### 4. Export and import
+
+```bash
+python3 email_campaign_app/importer/export_json.py -o exports/your_campaign.json
+# Then import via the web UI or API
+curl -X POST http://localhost:8080/api/contacts/import-json \
+  -H "Content-Type: application/json" -d @exports/your_campaign.json
+```
+
+### 5. Set up nightly automation (optional)
+
+The nightly system runs Claude Code on a server to autonomously find new contacts, write personalized emails, validate formatting, and commit to git.
+
+**Requirements:**
+- A server (Ubuntu recommended) with Node.js 20+ and Claude Code CLI installed
+- An Anthropic API key (set as `ANTHROPIC_API_KEY` on the server)
+- Your sender profile completed in the web app (generates `nightly/profile.json`)
+
+```bash
+# Deploy to server:
+bash nightly/deploy.sh [your-api-key]
+
+# Or run manually:
+bash nightly/find_more_contacts.sh --list          # List your segments
+bash nightly/find_more_contacts.sh segment_name 10  # Find 10 contacts
+```
+
+## Configuration
+
+Set these environment variables (see `email_campaign_app/config.py`):
+
+| Variable | Purpose |
+|----------|---------|
+| `SECRET_KEY` | Flask session secret |
+| `DATABASE_URL` | SQLite/PostgreSQL connection string |
+| `FERNET_KEY` | Encryption key for stored Gmail OAuth tokens |
+| `GMAIL_CLIENT_ID` | Google OAuth client ID (for Gmail sending) |
+| `GMAIL_CLIENT_SECRET` | Google OAuth client secret (for Gmail sending) |
+| `OAUTH_REDIRECT_URI` | Gmail OAuth callback URL |
+
+## Running Tests
+
+```bash
+cd email_campaign_app
+pip install -r requirements.txt
+python3 -m pytest tests/ -v
+```
+
+---
+
 ## How We Automated Our Entire Outreach Pipeline
 
 Hi I'm Adi, one of the co-founders of Wattnest. We're building a predictive maintenance platform for HVAC equipment. Early on, we had a problem that had nothing to do with HVAC.
@@ -129,98 +221,6 @@ We also set up an **API key section** for the project so it is not as complicate
 ---
 
 *Built by Aditya Kanteti. Wattnest builds predictive maintenance tools for commercial HVAC equipment. If you're interested in what we're building, reach out on [LinkedIn](https://www.linkedin.com/in/adityakanteti).*
-
----
-
-## Quick Start
-
-### 1. Set up the sending app
-
-```bash
-cd email_campaign_app
-python3 -m venv venv && source venv/bin/activate
-pip install -r requirements.txt
-python3 -c "from app import create_app; create_app()"  # Initialize DB
-python3 wsgi.py  # Run locally at http://localhost:8080
-```
-
-> **Note:** A `FERNET_KEY` is auto-generated for local development. For production,
-> generate a stable key so encrypted Gmail tokens survive restarts:
-> ```bash
-> export FERNET_KEY=$(python3 -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())")
-> ```
-
-### 2. Complete the onboarding form
-
-When you first open the app, you'll see a setup wizard. Fill in:
-- **Your company** — name, industry, product description
-- **About you** — name, title, background (used as the email sender identity)
-- **Target audience** — who you're reaching out to, broken into prioritized segments
-- **Messaging style** — tone, key metrics, internal pricing notes
-
-This profile powers the nightly automation agent. It also generates `nightly/profile.json`, which the server-side scripts read to build prompts dynamically.
-
-### 3. Create a campaign
-
-See `campaigns/example_campaign/` for the full format. The basic structure:
-
-```
-campaigns/your_campaign/
-  README.md                    — ICP, targets, status
-  target_companies.md          — Company research
-  contacts.md                  — Decision-maker contacts
-  emails.md                    — Initial outreach emails
-  followups.md                 — Follow-up sequences
-  your_outreach_campaign.md    — Master file (everything combined)
-```
-
-### 4. Export and import
-
-```bash
-python3 email_campaign_app/importer/export_json.py -o exports/your_campaign.json
-# Then import via the web UI or API
-curl -X POST http://localhost:8080/api/contacts/import-json \
-  -H "Content-Type: application/json" -d @exports/your_campaign.json
-```
-
-### 5. Set up nightly automation (optional)
-
-The nightly system runs Claude Code on a server to autonomously find new contacts, write personalized emails, validate formatting, and commit to git.
-
-**Requirements:**
-- A server (Ubuntu recommended) with Node.js 20+ and Claude Code CLI installed
-- An Anthropic API key (set as `ANTHROPIC_API_KEY` on the server)
-- Your sender profile completed in the web app (generates `nightly/profile.json`)
-
-```bash
-# Deploy to server:
-bash nightly/deploy.sh [your-api-key]
-
-# Or run manually:
-bash nightly/find_more_contacts.sh --list          # List your segments
-bash nightly/find_more_contacts.sh segment_name 10  # Find 10 contacts
-```
-
-## Configuration
-
-Set these environment variables (see `email_campaign_app/config.py`):
-
-| Variable | Purpose |
-|----------|---------|
-| `SECRET_KEY` | Flask session secret |
-| `DATABASE_URL` | SQLite/PostgreSQL connection string |
-| `FERNET_KEY` | Encryption key for stored Gmail OAuth tokens |
-| `GMAIL_CLIENT_ID` | Google OAuth client ID (for Gmail sending) |
-| `GMAIL_CLIENT_SECRET` | Google OAuth client secret (for Gmail sending) |
-| `OAUTH_REDIRECT_URI` | Gmail OAuth callback URL |
-
-## Running Tests
-
-```bash
-cd email_campaign_app
-pip install -r requirements.txt
-python3 -m pytest tests/ -v
-```
 
 ---
 
